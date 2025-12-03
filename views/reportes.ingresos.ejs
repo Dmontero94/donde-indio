@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Reporte de ingresos - Donde Indio</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body class="p-4">
+    <div class="container">
+    <!-- NAVBAR -->
+      <%- include('partials/navbar') %>
+      <h1 class="mb-4">Reporte de ingresos</h1>
+
+      <div class="mb-3">
+        <a href="/mesas" class="btn btn-secondary btn-sm">⬅ Volver a mesas</a>
+      </div>
+
+      <!-- FILTRO POR RANGO DE FECHAS -->
+      <form method="GET" action="/reportes/ingresos" class="row mb-4 g-2">
+        <div class="col-md-4">
+          <label class="form-label">Desde</label>
+          <input
+            type="date"
+            name="desde"
+            class="form-control"
+            value="<%= desde %>"
+          />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Hasta</label>
+          <input
+            type="date"
+            name="hasta"
+            class="form-control"
+            value="<%= hasta %>"
+          />
+        </div>
+
+        <div class="col-md-4 d-flex align-items-end">
+          <button class="btn btn-primary w-100">Filtrar</button>
+        </div>
+      </form>
+
+      <!-- RESUMEN DEL RANGO -->
+      <div class="row mb-4">
+        <div class="col-md-4 mb-2">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Total en el rango</h5>
+              <p class="card-text fs-4">
+                ₡<%= total.toLocaleString("es-CR") %>
+              </p>
+              <p class="card-text">
+                <small class="text-muted">
+                  Desde <%= desde %> hasta <%= hasta %>
+                </small>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DETALLE POR DÍA -->
+      <h3 class="mb-3">Ingresos por día en el rango</h3>
+
+      <% if (!resumenDias || resumenDias.length === 0) { %>
+        <p>No hay facturas pagadas en este rango de fechas.</p>
+      <% } else { %>
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th class="text-end">Total del día</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% resumenDias.forEach(dia => { %>
+              <tr>
+                <td><%= dia.fecha %></td>
+                <td class="text-end">
+                  ₡<%= dia.total.toLocaleString("es-CR") %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </body>
+</html>
+
