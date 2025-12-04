@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cobrar Mesa <%= mesa.numero %> - Donde Indio</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body class="p-4">
+    <div class="container">
+
+    <!-- NAVBAR -->
+      <%- include('partials/navbar') %>
+
+      <a href="/mesas/<%= mesa.numero %>" class="btn btn-secondary mb-3">
+        ⬅ Volver a la mesa
+      </a>
+
+      <h1>Cobrar Mesa <%= mesa.numero %></h1>
+
+      <p>
+        Total a pagar:
+        <strong>₡<%= bill.total.toLocaleString("es-CR") %></strong>
+      </p>
+
+      <form
+        action="/mesas/<%= mesa.numero %>/cobrar"
+        method="POST"
+        class="mt-4"
+      >
+        <div class="mb-3">
+          <label for="metodoPago" class="form-label">Método de pago</label>
+          <select
+            id="metodoPago"
+            name="metodoPago"
+            class="form-select"
+            required
+          >
+            <option value="efectivo">Efectivo</option>
+            <option value="sinpe">SINPE Móvil</option>
+          </select>
+        </div>
+
+        <div class="mb-3" id="montoRecibidoGroup">
+          <label for="montoRecibido" class="form-label">
+            Monto recibido (solo efectivo)
+          </label>
+          <input
+            type="number"
+            step="50"
+            min="<%= bill.total %>"
+            class="form-control"
+            id="montoRecibido"
+            name="montoRecibido"
+            value="<%= bill.total %>"
+          />
+          <div class="form-text">
+            Si pagan con efectivo, poné cuánto te dieron para calcular el vuelto.
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Vuelto a entregar</label>
+          <div id="vueltoPreview" class="form-control-plaintext fw-bold">
+            ₡0
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">
+          Confirmar cobro
+        </button>
+      </form>
+
+      <script>
+        const metodoSelect = document.getElementById("metodoPago");
+        const montoInput = document.getElementById("montoRecibido");
+        const montoGroup = document.getElementById("montoRecibidoGroup");
+        const vueltoPreview = document.getElementById("vueltoPreview");
+        const total = <%= bill.total %>;
+
+        function formatCRC(valor) {
+          return "₡" + valor.toLocaleString("es-CR");
+        }
+
+        function actualizarVuelto() {
+          if (metodoSelect.value === "sinpe") {
+            vueltoPreview.textContent = "₡0";
+            return;
+          }
+
+          const recibido = parseInt(montoInput.value || "0", 10);
+          if (isNaN(recibido) || recibido < total) {
+            vueltoPreview.textContent = "—";
+            return;
+          }
+
+          const vuelto = recibido - total;
+          vueltoPreview.textContent = formatCRC(vuelto);
+        }
+
+        function toggleMonto() {
+          if (metodoSelect.value === "sinpe") {
+            montoInput.disabled = true;
+            montoGroup.classList.add("text-muted");
+            montoInput.value = total;
+          } else {
+            montoInput.disabled = false;
+            montoGroup.classList.remove("text-muted");
+          }
+          actualizarVuelto();
+        }
+
+        metodoSelect.addEventListener("change", toggleMonto);
+        montoInput.addEventListener("input", actualizarVuelto);
+
+        toggleMonto();
+      </script>
+    </div>
+  </body>
+</html>
