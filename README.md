@@ -1,42 +1,54 @@
 🍽️ Donde Indio POS
+Sistema Web de Mesas, Órdenes, Facturación y Reportes
 
-Sistema de Mesas, Órdenes, Facturación y Reportes
-Restaurante y Cevichería Donde Indio — Costa Rica 🇨🇷
+Restaurante & Cevichería Donde Indio — Costa Rica 🇨🇷
 
-🔥 POS Web completo para restaurantes: mesas, órdenes, facturas, reportes y administración del menú.
+Solución digital creada para optimizar la atención al cliente, agilizar la toma de órdenes y centralizar la gestión operativa del restaurante.
 
-🌟 Características principales
+🎯 Objetivo del Proyecto
+
+Diseñar un POS Web moderno, rápido y responsivo que permita gestionar mesas, órdenes, facturación e ingresos del restaurante de forma eficiente, sin depender de software externo.
+
+🛠️ Stack Tecnológico
+Categoría	Tecnología	Razón de Uso
+Backend/API	Node.js + Express.js	JavaScript moderno, soporte estable y arquitectura modular.
+Frontend	EJS + Bootstrap 5	Interfaces dinámicas, limpias y responsivas.
+Base de Datos	MongoDB Atlas (Mongoose)	Manejo eficiente de datos no relacionales (mesas, órdenes, facturas).
+Control de Versión	Git + GitHub	Colaboración y versionado del código.
+Despliegue	Render	Deploy rápido, escalable y gratuito.
+👩🏻‍💻 Equipo de Desarrollo
+Rol Principal	Miembro del Equipo	Contacto
+Líder Técnico / Arquitectura	Daniela Montero	danimonte03@gmail.com
+
+Front-End / Full-Stack (En progreso)	Daniela Montero	github.com/Dmontero94
+📘 Características del Sistema
 🪑 Gestión de Mesas
 
-Vista general de mesas con estado:
+Estado en tiempo real (🟢 Libre / 🔴 Ocupada).
 
-🟢 Libre
+Vista detallada con cuenta activa.
 
-🔴 Ocupada
+Agregar productos desde el menú.
 
-Detalle de mesa con cuenta activa.
-
-Agregar productos del menú.
-
-Cierre automático de cuenta al pagar.
+Cierre automático al procesar el pago.
 
 🧾 Facturación
 
-Pago mediante:
+Métodos de pago:
 
-💵 Efectivo (con cálculo automático del vuelto)
+💵 Efectivo (con cálculo automático de vuelto).
 
-📲 SINPE móvil
+📲 SINPE Móvil.
 
-Registro automático de factura.
+Registro automático de facturas.
 
-Historial de facturas pagadas.
+Historial completo de pagos.
 
-Detalle completo de cada factura.
+Detalle por factura: productos, totales, método de pago.
 
-📊 Reportes
+📊 Reportes e Ingresos
 
-Ingresos por:
+Totales por:
 
 📅 Día
 
@@ -46,41 +58,32 @@ Ingresos por:
 
 🎯 Rango personalizado
 
-Totales calculados en tiempo real.
-
 Top de productos más vendidos.
 
-📱 Interfaz intuitiva
+Cálculos en tiempo real.
+
+📱 Interfaz de Usuario
 
 Basado en Bootstrap 5.
 
-Vistas limpias y responsivas.
+Diseño limpio, intuitivo y responsivo.
 
-Navbar global para navegación fluida.
-
-🛠️ Tecnologías Utilizadas
-| Área               | Tecnología                  |
-| ------------------ | --------------------------- |
-| Backend            | Node.js, Express.js         |
-| Base de Datos      | MongoDB Atlas (Mongoose)    |
-| Frontend           | EJS Templates + Bootstrap 5 |
-| Control de Versión | Git & GitHub                |
-| Deploy             | Render                      |
+Navbar global para navegación rápida.
 
 📂 Estructura del Proyecto
 donde-indio/
 │
 ├── models/          # Esquemas MongoDB (Mesas, Productos, Facturas)
 ├── routes/          # Rutas del sistema (mesas, reportes, facturas)
-├── views/           # Plantillas EJS (UI del sistema)
+├── views/           # Plantillas EJS (UI)
 │   └── partials/    # Navbar, layout, componentes
 │
-├── public/          # Archivos estáticos (css, imgs…)
+├── public/          # Estáticos (CSS, imágenes)
 ├── server.js        # Servidor Express
-├── package.json     # Dependencias y scripts
+├── package.json     # Scripts y dependencias
 └── .gitignore
 
-🚀 Instalación y Ejecución Local
+🚀 Instalación y Ejecución
 1️⃣ Clonar el repositorio
 git clone https://github.com/Dmontero94/donde-indio.git
 cd donde-indio
@@ -94,30 +97,35 @@ Crear archivo .env:
 
 MONGODB_URI=tu_cadena_de_conexion_de_mongo_atlas
 
-4️⃣ Ejecutar en modo desarrollo
+4️⃣ Iniciar entorno de desarrollo
 npm run dev
 
 
 Abrir en el navegador:
-
-http://localhost:4000
+👉 http://localhost:4000
 
 🌐 Deploy (Render + MongoDB Atlas)
-Configuración para Render:
-Build Command:  npm install
-Start Command:  npm start
 
-Variables de entorno:
+Comandos:
+
+Build: npm install
+
+Start: npm start
+
+Variables de Entorno:
+
 MONGODB_URI=...
 NODE_ENV=production
 
 📸 Capturas del Sistema
 
+(Agrega capturas aquí)
+
 🏠 Inicio
 
 🪑 Vista de Mesas
 
-🍽️ Detalle de Mesa / Orden
+🍽️ Detalle de Orden
 
 💵 Cobro
 
@@ -125,176 +133,39 @@ NODE_ENV=production
 
 🧾 Historial de Facturas
 
-👩🏻‍💻 Autora
-Daniela Montero
-
-Desarrolladora de Software (Front-End / Full Stack en progreso)
-💼 GitHub: https://github.com/Dmontero94
-
-📧 danimonte03@gmail.com
-
-🌐 Costa Rica 🇨🇷
-
 ⭐ ¿Te gusta este proyecto?
 
-¡Regálale una estrella en GitHub!
-Y si quieres implementar un POS completo para tu negocio, ¡contáctame! 💚🔥
+Si te fue útil, ¡regálale una ⭐ en GitHub!
+Y si querés implementar un sistema POS profesional para tu negocio, ¡escribime! 💚🔥
 
-***English Version Below***
-
+🇺🇸 English Version
 🍽️ Donde Indio POS
-
 Table, Order, Billing & Reporting System
+
 Restaurant & Cevichería Donde Indio — Costa Rica 🇨🇷
 
+Modern web-based POS designed to streamline daily operations, improve workflow and optimize order & payment processing.
 
+🎯 Project Goal
 
-
-
-
-
-
-
-
-
-
-🔥 A full web-based POS system for restaurant operations: table management, orders, billing, reports, and product analytics.
-
-🌟 Key Features
-🪑 Table Management
-
-Overview of all tables with live status:
-
-🟢 Available
-
-🔴 Occupied
-
-🟡 Pending Payment
-
-Per-table active order view
-
-Add items from the restaurant menu
-
-Auto-close and clear tables upon payment
-
-🧾 Billing & Payments
-
-Supported payment methods:
-
-💵 Cash (automatic change calculation)
-
-📲 SINPE mobile (Costa Rica)
-
-Automatically stores each completed bill
-
-Full invoice history
-
-Detailed invoice view including products, totals, and payment info
-
-📊 Reports & Analytics
-
-Revenue reporting by:
-
-📅 Day
-
-📆 Week
-
-📈 Month
-
-🎯 Custom date range
-
-Real-time total calculations
-
-Most sold products ranking (top sellers)
-
-📱 User-Friendly Interface
-
-Built with Bootstrap 5 for responsive design
-
-Clean and intuitive UI
-
-Global navigation bar for quick access
+Build a fast, intuitive, and scalable POS web system for managing restaurant tables, orders, billing and revenue reporting.
 
 🛠️ Tech Stack
-| Category        | Technology                        |
-| --------------- | --------------------------------- |
-| Backend         | Node.js, Express.js               |
-| Database        | MongoDB Atlas (Mongoose ORM)      |
-| Frontend        | EJS Template Engine + Bootstrap 5 |
-| Version Control | Git & GitHub                      |
-| Deployment      | Render Web Services               |
-
-📂 Project Structure
-donde-indio/
-│
-├── models/          # MongoDB Schemas (Tables, Products, Bills)
-├── routes/          # Express routes (tables, billing, reports)
-├── views/           # EJS templates (UI for all pages)
-│   └── partials/    # Navbar, shared layout components
-│
-├── public/          # Static files (CSS, images)
-├── server.js        # Express server entry point
-├── package.json     # Dependencies and scripts
-└── .gitignore
-
-🚀 Run Locally
-1️⃣ Clone the repository
-git clone https://github.com/Dmontero94/donde-indio.git
-cd donde-indio
-
-2️⃣ Install dependencies
-npm install
-
-3️⃣ Environment variables
-
-Create a .env file in the root folder:
-
-MONGODB_URI=your_mongodb_atlas_connection_string
-
-4️⃣ Start development mode
-npm run dev
-
-
-Open in browser:
-
-http://localhost:4000
-
-🌐 Deployment (Render + MongoDB Atlas)
-Build & Start commands
-Build:  npm install
-Start:  npm start
-
-Environment Variables
-MONGODB_URI=your_connection_string
-NODE_ENV=production
-
-📸 Screenshots
-
-(You can add screenshots once you capture them — these are placeholders.)
-
-🏠 Home
-
-🪑 Tables View
-
-🍽️ Table Order Detail
-
-💵 Payment Screen
-
-📊 Reports
-
-🧾 Invoice History
-
+Category	Technology	Reason
+Backend/API	Node.js + Express.js	Modern, modular, stable
+Frontend	EJS + Bootstrap 5	Clean UI, responsive design
+Database	MongoDB Atlas	Ideal for non-relational restaurant workflows
+Version Control	Git & GitHub	Safe and collaborative
+Deployment	Render	Simple and scalable
 👩🏻‍💻 Author
+
 Daniela Montero
-
 Software Developer (Front-End / Full-Stack in progress)
-💼 GitHub: https://github.com/Dmontero94
-
 📧 danimonte03@gmail.com
 
 🌐 Costa Rica 🇨🇷
 
 ⭐ Like this project?
 
-If you find it useful, give it a ⭐ on GitHub!
-For POS implementations for real businesses, feel free to reach out! 💚🔥
+If you find it useful, consider giving it a ⭐!
+For full POS implementations for real businesses, feel free to reach out! 🔥💚
