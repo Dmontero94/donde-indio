@@ -102,13 +102,57 @@
                 <th>Subtotal</th>
               </tr>
             </thead>
-            <tbody>
-              <% mesa.cuentaActual.items.forEach(item => { %>
-                <tr>
-                  <td><%= item.nombreProducto %></td>
-                  <td><%= item.cantidad %></td>
-                  <td>₡<%= item.precioUnitario %></td>
-                  <td>₡<%= item.subtotal %></td>
+                <tbody>
+      <% mesa.cuentaActual.items.forEach(item => { %>
+        <tr>
+          <td><%= item.nombreProducto %></td>
+
+          <!-- COLUMNA CANTIDAD CON BOTONES - / + -->
+          <td>
+            <form
+              action="/mesas/<%= mesa.numero %>/items/<%= item._id %>/decrease"
+              method="POST"
+              class="d-inline"
+            >
+              <button class="btn btn-sm btn-outline-secondary" title="Disminuir">
+                ➖
+              </button>
+            </form>
+
+            <span class="mx-2"><%= item.cantidad %></span>
+
+            <form
+              action="/mesas/<%= mesa.numero %>/items/<%= item._id %>/increase"
+              method="POST"
+              class="d-inline"
+            >
+              <button class="btn btn-sm btn-outline-secondary" title="Aumentar">
+                ➕
+              </button>
+            </form>
+          </td>
+
+          <td>₡<%= item.precioUnitario.toLocaleString("es-CR") %></td>
+          <td>₡<%= item.subtotal.toLocaleString("es-CR") %></td>
+
+          <!-- COLUMNA ELIMINAR CON CONFIRMACIÓN -->
+          <td>
+            <form
+              action="/mesas/<%= mesa.numero %>/items/<%= item._id %>/delete"
+              method="POST"
+              style="display:inline;"
+              onsubmit="return confirm('¿Seguro que quiere eliminar este producto?');"
+            >
+              <button class="btn btn-sm btn-danger" title="Eliminar producto">
+                🗑️
+              </button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
                 </tr>
               <% }) %>
             </tbody>

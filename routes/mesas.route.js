@@ -119,6 +119,187 @@ router.post("/:numero/items", async (req, res) => {
     if (!producto) {
       return res.status(404).send("Producto no encontrado");
     }
+// 🔹 Aumentar cantidad de un item
+router.post("/:numero/items/:itemId/increase", async (req, res) => {
+  try {
+    const numero = parseInt(req.params.numero, 10);
+    const itemId = req.params.itemId;
+
+    const mesa = await Table.findOne({ numero });
+
+    if (!mesa || !mesa.cuentaActual) {
+      return res.status(400).send("La mesa no tiene cuenta activa");
+    }
+
+    const bill = await Bill.findById(mesa.cuentaActual);
+
+    if (!bill) {
+      return res.status(404).send("Cuenta no encontrada");
+    }
+
+    const item = bill.items.id(itemId);
+    if (!item) {
+      return res.status(404).send("Producto no encontrado en la cuenta");
+    }
+
+    item.cantidad += 1;
+    item.subtotal = item.cantidad * item.precioUnitario;
+
+    bill.total = bill.items.reduce((sum, it) => sum + it.subtotal, 0);
+
+    await bill.save();
+
+    res.redirect(`/mesas/${numero}`);
+  } catch (err) {
+    console.error("Error aumentando cantidad:", err);
+    res.status(500).send("Error aumentando cantidad");
+  }
+});
+
+// 🔹 Disminuir cantidad de un item
+router.post("/:numero/items/:itemId/decrease", async (req, res) => {
+  try {
+    const numero = parseInt(req.params.numero, 10);
+    const itemId = req.params.itemId;
+
+    const mesa = await Table.findOne({ numero });
+
+    if (!mesa || !mesa.cuentaActual) {
+      return res.status(400).send("La mesa no tiene cuenta activa");
+    }
+
+    const bill = await Bill.findById(mesa.cuentaActual);
+
+    if (!bill) {
+      return res.status(404).send("Cuenta no encontrada");
+    }
+
+    const item = bill.items.id(itemId);
+    if (!item) {
+      return res.status(404).send("Producto no encontrado en la cuenta");
+    }
+
+    // Disminuir cantidad
+    item.cantidad -= 1;
+
+    // Si la cantidad baja a 0 o menos → eliminar el item
+    if (item.cantidad <= 0) {
+      item.deleteOne(); // elimina el subdocumento del array
+    } else {
+      item.subtotal = item.cantidad * item.precioUnitario;
+    }
+
+    // Recalcular total
+    bill.total = bill.items.reduce((sum, it) => sum + it.subtotal, 0);
+
+    // Si ya no quedan items, cerrar la mesa y eliminar la cuenta
+    if (bill.items.length === 0) {
+      mesa.cuentaActual = null;
+      mesa.estado = "libre";
+
+      await mesa.save();
+      await bill.deleteOne();
+
+      return res.redirect(`/mesas/${numero}`);
+    }
+
+    await bill.save();
+    await mesa.save();
+
+    res.redirect(`/mesas/${numero}`);
+  } catch (err) {
+    console.error("Error disminuyendo cantidad:", err);
+    res.status(500).send("Error disminuyendo cantidad");
+  }
+});
+
+// 🔹 Eliminar un item de la cuenta de una mesa
+router.post("/:numero/items/:itemId/delete", async (req, res) => {
+  try {
+    const numero = parseInt(req.params.numero, 10);
+    const itemId = req.params.itemId;
+
+    const mesa = await Table.findOne({ numero });
+
+    if (!mesa || !mesa.cuentaActual) {
+      return res.status(400).send("La mesa no tiene cuenta activa");
+    }
+
+    const bill = await Bill.findById(mesa.cuentaActual);
+
+    if (!bill) {
+      return res.status(404).send("Cuenta no encontrada");
+    }
+
+    // Filtrar el item a eliminar
+    bill.items = bill.items.filter((item) => item._id.toString() !== itemId);
+
+    // Recalcular total
+    bill.total = bill.items.reduce((sum, it) => sum + it.subtotal, 0);
+
+    // Si ya no hay productos, liberar mesa y eliminar cuenta
+    if (bill.items.length === 0) {
+      mesa.cuentaActual = null;
+      mesa.estado = "libre";
+
+      await mesa.save();
+      await bill.deleteOne();
+
+      return res.redirect(`/mesas/${numero}`);
+    }
+
+    await bill.save();
+    await mesa.save();
+
+    res.redirect(`/mesas/${numero}`);
+  } catch (err) {
+    console.error("Error eliminando item:", err);
+    res.status(500).send("Error eliminando producto");
+  }
+});
+
+// 🗑️ Eliminar un item de la cuenta de una mesa
+router.post("/:numero/items/:itemId/delete", async (req, res) => {
+  try {
+    const numero = parseInt(req.params.numero, 10);
+    const itemId = req.params.itemId;
+
+    // Encontrar la mesa y su cuenta
+    const mesa = await Table.findOne({ numero }).populate("cuentaActual");
+
+    if (!mesa || !mesa.cuentaActual) {
+      return res.status(400).send("La mesa no tiene cuenta activa");
+    }
+
+    const bill = mesa.cuentaActual;
+
+    // Eliminar el item
+    bill.items = bill.items.filter(item => item._id.toString() !== itemId);
+
+    // Recalcular total
+    bill.total = bill.items.reduce((sum, item) => sum + item.subtotal, 0);
+
+    // 🧨 NUEVO: si ya no hay productos → cerrar cuenta automáticamente
+    if (bill.items.length === 0) {
+      mesa.cuentaActual = null;
+      mesa.estado = "libre";
+
+      await mesa.save();
+      await bill.deleteOne(); // eliminar la factura temporal vacía
+
+      return res.redirect(`/mesas/${numero}`);
+    }
+
+    // Si quedan productos, solo guardar y recargar la página
+    await bill.save();
+
+    res.redirect(`/mesas/${numero}`);
+
+  } catch (err) {
+    console.error("Error eliminando item:", err);
+    res.status(500).send("Error eliminando producto");
+  }
+});
 
     const qty = parseInt(cantidad, 10) || 1;
     const subtotal = producto.precio * qty;
