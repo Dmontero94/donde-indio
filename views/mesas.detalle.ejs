@@ -85,6 +85,57 @@
           </form>
         </div>
       </div>
+            <!-- FORMULARIO: AGREGAR EXTRA PERSONALIZADO -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h2 class="h5 mb-3">Agregar extra personalizado</h2>
+          <p class="text-muted small mb-3">
+            Para órdenes especiales, solo proteína, cambios en acompañamientos, etc.
+          </p>
+
+          <form
+            action="/mesas/<%= mesa.numero %>/extras"
+            method="POST"
+            class="row g-2 align-items-end"
+          >
+            <div class="col-md-6">
+              <label for="descripcionExtra" class="form-label">
+                Descripción
+              </label>
+              <input
+                type="text"
+                id="descripcionExtra"
+                name="descripcion"
+                class="form-control"
+                placeholder="Ej: Solo carne con ensalada, sin arroz"
+                required
+              />
+            </div>
+
+            <div class="col-md-3">
+              <label for="montoExtra" class="form-label">
+                Monto (₡)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="50"
+                value="0"
+                id="montoExtra"
+                name="monto"
+                class="form-control"
+                required
+              />
+            </div>
+
+            <div class="col-md-3">
+              <button type="submit" class="btn btn-outline-primary w-100">
+                Agregar extra
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
 
       <!-- LISTA DE PRODUCTOS EN LA CUENTA -->
       <% if (mesa.cuentaActual && mesa.cuentaActual.items && mesa.cuentaActual.items.length > 0) { %>

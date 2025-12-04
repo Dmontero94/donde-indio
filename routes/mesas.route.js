@@ -177,6 +177,65 @@ router.post("/:numero/items", async (req, res) => {
     res.status(500).send("Error agregando producto a la cuenta");
   }
 });
+// 🔹 Agregar extra personalizado a la cuenta de una mesa
+router.post("/:numero/extras", async (req, res) => {
+  try {
+    const numero = parseInt(req.params.numero, 10);
+    const { descripcion, monto } = req.body;
+    const amount = parseInt(monto, 10) || 0;
+
+    // Si el monto es 0 o negativo, no hacemos nada
+    if (amount <= 0) {
+      return res.redirect(`/mesas/${numero}`);
+    }
+
+    // Buscar mesa
+    const mesa = await Table.findOne({ numero }).populate("cuentaActual");
+
+    if (!mesa) {
+      return res.status(404).send("Mesa no encontrada");
+    }
+
+    // Si no hay cuenta, crear una nueva
+    let bill = mesa.cuentaActual;
+
+    if (!bill) {
+      bill = new Bill({
+        mesa: mesa.numero,
+        items: [],
+        total: 0,
+        estado: "abierta",
+        creadoEn: new Date(),
+      });
+    }
+
+    // Agregar item personalizado
+    bill.items.push({
+      nombreProducto: descripcion || "Extra personalizado",
+      cantidad: 1,
+      precioUnitario: amount,
+      subtotal: amount,
+    });
+
+    // Recalcular total
+    bill.total = bill.items.reduce((sum, it) => sum + it.subtotal, 0);
+
+    // Guardar cuenta
+    await bill.save();
+
+    // Si la mesa no tenía cuenta, ligarla ahora
+    if (!mesa.cuentaActual) {
+      mesa.cuentaActual = bill._id;
+      mesa.estado = "ocupada";
+      await mesa.save();
+    }
+
+    res.redirect(`/mesas/${numero}`);
+  } catch (err) {
+    console.error("Error agregando extra a la mesa:", err);
+    res.status(500).send("Error agregando extra personalizado");
+  }
+});
 
 // 🔹 Aumentar cantidad de un item
 router.post("/:numero/items/:itemId/increase", async (req, res) => {
