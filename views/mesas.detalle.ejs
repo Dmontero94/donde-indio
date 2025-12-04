@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Mesa <%= mesa.numero %> - Donde Indio</title>
+    <title>Detalle de mesa - Donde Indio</title>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
@@ -10,166 +10,182 @@
     />
   </head>
 
-  <body class="p-4">
-    <div class="container">
-
-            <!-- NAVBAR -->
+  <body class="bg-light">
+    <div class="container py-4">
+      <!-- NAVBAR -->
       <%- include('partials/navbar') %>
 
-      <a href="/mesas" class="btn btn-secondary mb-3">⬅ Volver</a>
+      <!-- ENCABEZADO -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">Mesa <%= mesa.numero %></h1>
 
-      <h1>Mesa <%= mesa.numero %></h1>
-      <p>
-        Estado:
-        <strong class="<%= mesa.estado === 'ocupada' ? 'text-danger' : 'text-success' %>">
-          <%= mesa.estado %>
-        </strong>
+        <a href="/mesas" class="btn btn-secondary btn-sm">
+          ⬅ Volver a mesas
+        </a>
+      </div>
+
+      <p class="mb-3">
+        <strong>Estado:</strong>
+        <% if (mesa.estado === 'ocupada') { %>
+          <span class="badge bg-danger">Ocupada</span>
+        <% } else if (mesa.estado === 'libre') { %>
+          <span class="badge bg-success">Libre</span>
+        <% } else { %>
+          <span class="badge bg-warning text-dark"><%= mesa.estado %></span>
+        <% } %>
       </p>
 
-      <% if (mesa.estado === 'libre') { %>
-        <!-- Mesa libre: botón para abrir cuenta -->
-        <a href="/mesas/<%= mesa.numero %>/abrir" class="btn btn-primary mb-3">
-          Abrir cuenta
-        </a>
+      <!-- FORMULARIO: AGREGAR PRODUCTO -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h2 class="h5 mb-3">Agregar producto a la cuenta</h2>
 
-      <% } else { %>
-        <!-- Mesa ocupada: formulario para agregar productos -->
-                 <h3>Total: ₡<%= mesa.cuentaActual.total %></h3>
+          <form
+            action="/mesas/<%= mesa.numero %>/items"
+            method="POST"
+            class="row g-2 align-items-end"
+          >
+            <div class="col-md-6">
+              <label for="productoId" class="form-label">Producto</label>
+              <select
+                id="productoId"
+                name="productoId"
+                class="form-select"
+                required
+              >
+                <option value="">Seleccionar...</option>
+                <% if (productos && productos.length > 0) { %>
+                  <% productos.forEach(function(prod) { %>
+                    <option value="<%= prod._id %>">
+                      <%= prod.categoria %> - <%= prod.nombre %> (₡<%= prod.precio.toLocaleString('es-CR') %>)
+                    </option>
+                  <% }); %>
+                <% } %>
+              </select>
+            </div>
 
-        <a
-          href="/mesas/<%= mesa.numero %>/cobrar"
-          class="btn btn-warning mt-3"
-        >
-          Cobrar mesa
-        </a>
+            <div class="col-md-3">
+              <label for="cantidad" class="form-label">Cantidad</label>
+              <input
+                type="number"
+                min="1"
+                value="1"
+                id="cantidad"
+                name="cantidad"
+                class="form-control"
+                required
+              />
+            </div>
 
-        <h3 class="mt-3">Agregar producto a la cuenta</h3>
+            <div class="col-md-3">
+              <button type="submit" class="btn btn-primary w-100">
+                Agregar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
 
-        <form
-          class="row g-2 mb-4"
-          action="/mesas/<%= mesa.numero %>/items"
-          method="POST"
-        >
-          <div class="col-md-8">
-            <label for="productoId" class="form-label">Producto</label>
-            <select
-              class="form-select"
-              id="productoId"
-              name="productoId"
-              required
-            >
-              <option value="">Seleccione un producto...</option>
-              <% productos.forEach(prod => { %>
-                <option value="<%= prod._id %>">
-                  <%= prod.categoria %> - <%= prod.nombre %> (₡<%= prod.precio %>)
-                </option>
-              <% }) %>
-            </select>
-          </div>
+      <!-- LISTA DE PRODUCTOS EN LA CUENTA -->
+      <% if (mesa.cuentaActual && mesa.cuentaActual.items && mesa.cuentaActual.items.length > 0) { %>
+        <h3 class="h5 mt-4">Productos en la cuenta</h3>
 
-          <div class="col-md-2">
-            <label for="cantidad" class="form-label">Cantidad</label>
-            <input
-              type="number"
-              class="form-control"
-              id="cantidad"
-              name="cantidad"
-              min="1"
-              value="1"
-              required
-            />
-          </div>
-
-          <div class="col-md-2 d-flex align-items-end">
-            <button type="submit" class="btn btn-success w-100">
-              Agregar
-            </button>
-          </div>
-        </form>
-
-        <h3>Cuenta actual</h3>
-
-        <% if (!mesa.cuentaActual || !mesa.cuentaActual.items || mesa.cuentaActual.items.length === 0) { %>
-          <p>No hay productos registrados aún.</p>
-        <% } else { %>
-
-          <table class="table">
-            <thead>
+        <table class="table table-sm align-middle mt-2">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th style="width: 200px;">Cantidad</th>
+              <th>Precio unitario</th>
+              <th>Subtotal</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% mesa.cuentaActual.items.forEach(function(item) { %>
               <tr>
-                <th>Producto</th>
-                <th>Cant</th>
-                <th>Precio</th>
-                <th>Subtotal</th>
+                <td><%= item.nombreProducto %></td>
+
+                <!-- COLUMNA CANTIDAD CON BOTONES - / + -->
+                <td>
+                  <form
+                    action="/mesas/<%= mesa.numero %>/items/<%= item._id %>/decrease"
+                    method="POST"
+                    class="d-inline"
+                  >
+                    <button
+                      type="submit"
+                      class="btn btn-sm btn-outline-secondary"
+                      title="Disminuir cantidad"
+                    >
+                      ➖
+                    </button>
+                  </form>
+
+                  <span class="mx-2"><%= item.cantidad %></span>
+
+                  <form
+                    action="/mesas/<%= mesa.numero %>/items/<%= item._id %>/increase"
+                    method="POST"
+                    class="d-inline"
+                  >
+                    <button
+                      type="submit"
+                      class="btn btn-sm btn-outline-secondary"
+                      title="Aumentar cantidad"
+                    >
+                      ➕
+                    </button>
+                  </form>
+                </td>
+
+                <td>₡<%= item.precioUnitario.toLocaleString('es-CR') %></td>
+                <td>₡<%= item.subtotal.toLocaleString('es-CR') %></td>
+
+                <!-- ELIMINAR ITEM CON CONFIRMACIÓN -->
+                <td>
+                  <form
+                    action="/mesas/<%= mesa.numero %>/items/<%= item._id %>/delete"
+                    method="POST"
+                    style="display:inline;"
+                    onsubmit="return confirm('¿Seguro que quiere eliminar este producto?');"
+                  >
+                    <button
+                      type="submit"
+                      class="btn btn-sm btn-danger"
+                      title="Eliminar producto"
+                    >
+                      🗑️
+                    </button>
+                  </form>
+                </td>
               </tr>
-            </thead>
-                <tbody>
-      <% mesa.cuentaActual.items.forEach(item => { %>
-        <tr>
-          <td><%= item.nombreProducto %></td>
+            <% }); %>
+          </tbody>
+        </table>
 
-          <!-- COLUMNA CANTIDAD CON BOTONES - / + -->
-          <td>
-            <form
-              action="/mesas/<%= mesa.numero %>/items/<%= item._id %>/decrease"
-              method="POST"
-              class="d-inline"
-            >
-              <button class="btn btn-sm btn-outline-secondary" title="Disminuir">
-                ➖
-              </button>
-            </form>
+        <!-- TOTAL Y BOTÓN COBRAR -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <h4 class="h5 mb-0">
+            Total: ₡<%= mesa.cuentaActual.total.toLocaleString('es-CR') %>
+          </h4>
 
-            <span class="mx-2"><%= item.cantidad %></span>
-
-            <form
-              action="/mesas/<%= mesa.numero %>/items/<%= item._id %>/increase"
-              method="POST"
-              class="d-inline"
-            >
-              <button class="btn btn-sm btn-outline-secondary" title="Aumentar">
-                ➕
-              </button>
-            </form>
-          </td>
-
-          <td>₡<%= item.precioUnitario.toLocaleString("es-CR") %></td>
-          <td>₡<%= item.subtotal.toLocaleString("es-CR") %></td>
-
-          <!-- COLUMNA ELIMINAR CON CONFIRMACIÓN -->
-          <td>
-            <form
-              action="/mesas/<%= mesa.numero %>/items/<%= item._id %>/delete"
-              method="POST"
-              style="display:inline;"
-              onsubmit="return confirm('¿Seguro que quiere eliminar este producto?');"
-            >
-              <button class="btn btn-sm btn-danger" title="Eliminar producto">
-                🗑️
-              </button>
-            </form>
-          </td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
-<% } %>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-
-          <h3>Total: ₡<%= mesa.cuentaActual.total %></h3>
-
-        <% } %>
-
+          <a
+            href="/mesas/<%= mesa.numero %>/cobrar"
+            class="btn btn-success"
+          >
+            Cobrar
+          </a>
+        </div>
+      <% } else { %>
+        <p class="mt-4 text-muted">
+          No hay productos en la cuenta actual.
+        </p>
       <% } %>
 
-      <!-- Puedes dejar esto por mientras para debug si quieres
-      <hr />
-      <h5>Debug mesa:</h5>
-      <pre><%= JSON.stringify(mesa, null, 2) %></pre>
-      -->
-
     </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    ></script>
   </body>
 </html>

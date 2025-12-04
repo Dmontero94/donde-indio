@@ -106,19 +106,78 @@ router.post("/:numero/items", async (req, res) => {
   try {
     const numero = parseInt(req.params.numero, 10);
     const { productoId, cantidad } = req.body;
+    const qty = parseInt(cantidad, 10) || 1;
 
-    const mesa = await Table.findOne({ numero });
+    // Buscar mesa
+    const mesa = await Table.findOne({ numero }).populate("cuentaActual");
 
-    if (!mesa || !mesa.cuentaActual) {
-      return res.status(400).send("La mesa no tiene cuenta abierta");
+    if (!mesa) {
+      return res.status(404).send("Mesa no encontrada");
     }
 
-    const bill = await Bill.findById(mesa.cuentaActual);
+    // Si no hay cuentaActual, creamos una nueva
+    let bill = mesa.cuentaActual;
+
+    if (!bill) {
+      bill = new Bill({
+        mesa: mesa.numero,
+        items: [],
+        total: 0,
+        estado: "abierta",
+        creadoEn: new Date(),
+      });
+    }
+
+    // Buscar producto
     const producto = await Product.findById(productoId);
 
     if (!producto) {
       return res.status(404).send("Producto no encontrado");
     }
+
+    // Ver si el producto ya está en la cuenta
+    let item = bill.items.find(
+      (it) =>
+        (it.producto && it.producto.toString() === producto._id.toString()) ||
+        it.nombreProducto === producto.nombre
+    );
+
+    if (!item) {
+      // Agregar nuevo item a la cuenta
+      item = {
+        producto: producto._id,
+        nombreProducto: producto.nombre,
+        cantidad: qty,
+        precioUnitario: producto.precio,
+        subtotal: qty * producto.precio,
+      };
+      bill.items.push(item);
+    } else {
+      // Sumar a uno existente
+      item.cantidad += qty;
+      item.subtotal = item.cantidad * item.precioUnitario;
+    }
+
+    // Recalcular total
+    bill.total = bill.items.reduce((sum, it) => sum + it.subtotal, 0);
+
+    // Guardar cuenta
+    await bill.save();
+
+    // Vincular cuenta a la mesa si recién se creó
+    if (!mesa.cuentaActual) {
+      mesa.cuentaActual = bill._id;
+      mesa.estado = "ocupada";
+      await mesa.save();
+    }
+
+    res.redirect(`/mesas/${numero}`);
+  } catch (err) {
+    console.error("Error agregando producto a la mesa:", err);
+    res.status(500).send("Error agregando producto a la cuenta");
+  }
+});
+
 // 🔹 Aumentar cantidad de un item
 router.post("/:numero/items/:itemId/increase", async (req, res) => {
   try {
@@ -144,11 +203,9 @@ router.post("/:numero/items/:itemId/increase", async (req, res) => {
 
     item.cantidad += 1;
     item.subtotal = item.cantidad * item.precioUnitario;
-
     bill.total = bill.items.reduce((sum, it) => sum + it.subtotal, 0);
 
     await bill.save();
-
     res.redirect(`/mesas/${numero}`);
   } catch (err) {
     console.error("Error aumentando cantidad:", err);
@@ -179,20 +236,16 @@ router.post("/:numero/items/:itemId/decrease", async (req, res) => {
       return res.status(404).send("Producto no encontrado en la cuenta");
     }
 
-    // Disminuir cantidad
     item.cantidad -= 1;
 
-    // Si la cantidad baja a 0 o menos → eliminar el item
     if (item.cantidad <= 0) {
-      item.deleteOne(); // elimina el subdocumento del array
+      item.deleteOne();
     } else {
       item.subtotal = item.cantidad * item.precioUnitario;
     }
 
-    // Recalcular total
     bill.total = bill.items.reduce((sum, it) => sum + it.subtotal, 0);
 
-    // Si ya no quedan items, cerrar la mesa y eliminar la cuenta
     if (bill.items.length === 0) {
       mesa.cuentaActual = null;
       mesa.estado = "libre";
@@ -213,7 +266,7 @@ router.post("/:numero/items/:itemId/decrease", async (req, res) => {
   }
 });
 
-// 🔹 Eliminar un item de la cuenta de una mesa
+// 🔹 Eliminar un item de la cuenta
 router.post("/:numero/items/:itemId/delete", async (req, res) => {
   try {
     const numero = parseInt(req.params.numero, 10);
@@ -231,13 +284,9 @@ router.post("/:numero/items/:itemId/delete", async (req, res) => {
       return res.status(404).send("Cuenta no encontrada");
     }
 
-    // Filtrar el item a eliminar
     bill.items = bill.items.filter((item) => item._id.toString() !== itemId);
-
-    // Recalcular total
     bill.total = bill.items.reduce((sum, it) => sum + it.subtotal, 0);
 
-    // Si ya no hay productos, liberar mesa y eliminar cuenta
     if (bill.items.length === 0) {
       mesa.cuentaActual = null;
       mesa.estado = "libre";
@@ -255,72 +304,6 @@ router.post("/:numero/items/:itemId/delete", async (req, res) => {
   } catch (err) {
     console.error("Error eliminando item:", err);
     res.status(500).send("Error eliminando producto");
-  }
-});
-
-// 🗑️ Eliminar un item de la cuenta de una mesa
-router.post("/:numero/items/:itemId/delete", async (req, res) => {
-  try {
-    const numero = parseInt(req.params.numero, 10);
-    const itemId = req.params.itemId;
-
-    // Encontrar la mesa y su cuenta
-    const mesa = await Table.findOne({ numero }).populate("cuentaActual");
-
-    if (!mesa || !mesa.cuentaActual) {
-      return res.status(400).send("La mesa no tiene cuenta activa");
-    }
-
-    const bill = mesa.cuentaActual;
-
-    // Eliminar el item
-    bill.items = bill.items.filter(item => item._id.toString() !== itemId);
-
-    // Recalcular total
-    bill.total = bill.items.reduce((sum, item) => sum + item.subtotal, 0);
-
-    // 🧨 NUEVO: si ya no hay productos → cerrar cuenta automáticamente
-    if (bill.items.length === 0) {
-      mesa.cuentaActual = null;
-      mesa.estado = "libre";
-
-      await mesa.save();
-      await bill.deleteOne(); // eliminar la factura temporal vacía
-
-      return res.redirect(`/mesas/${numero}`);
-    }
-
-    // Si quedan productos, solo guardar y recargar la página
-    await bill.save();
-
-    res.redirect(`/mesas/${numero}`);
-
-  } catch (err) {
-    console.error("Error eliminando item:", err);
-    res.status(500).send("Error eliminando producto");
-  }
-});
-
-    const qty = parseInt(cantidad, 10) || 1;
-    const subtotal = producto.precio * qty;
-
-    bill.items.push({
-      productoId: producto._id,
-      nombreProducto: producto.nombre,
-      cantidad: qty,
-      precioUnitario: producto.precio,
-      subtotal,
-    });
-
-    bill.total = bill.items.reduce((acc, item) => acc + item.subtotal, 0);
-    await bill.save();
-
-    res.redirect(`/mesas/${numero}`);
-  } catch (err) {
-    console.error("Error al agregar item a la mesa:", err);
-    res
-      .status(500)
-      .send("Error agregando producto: " + (err.message || "desconocido"));
   }
 });
 
