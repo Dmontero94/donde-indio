@@ -146,30 +146,21 @@ router.get("/facturas", async (req, res) => {
 // ===============================
 // DETALLE DE FACTURA
 // ===============================
-router.get("/facturas", async (req, res) => {
+router.get("/facturas/:id", async (req, res) => {
   try {
-    const facturasDB = await Bill.find({ estado: "pagada" }).sort({
-      pagadoEn: -1,
-    });
+    const factura = await Bill.findById(req.params.id);
 
-    const facturas = facturasDB.map((f) => ({
-      ...f.toObject(),
-      pagadoEnCR: f.pagadoEn
-        ? f.pagadoEn.toLocaleString("es-CR", {
-            timeZone: "America/Costa_Rica",
-            dateStyle: "short",
-            timeStyle: "short",
-          })
-        : "",
-    }));
+    if (!factura) {
+      return res.status(404).send("Factura no encontrada");
+    }
 
-    res.render("reportes.facturas.ejs", {
-      facturas,
+    res.render("reportes.factura-detalle.ejs", {
+      factura,
       activePage: "facturas",
     });
   } catch (err) {
-    console.error("Error en historial de facturas:", err);
-    res.status(500).send("Error cargando facturas");
+    console.error("Error en detalle de factura:", err);
+    res.status(500).send("Error cargando detalle de factura");
   }
 });
 
