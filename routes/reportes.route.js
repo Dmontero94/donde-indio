@@ -4,6 +4,7 @@ const router = express.Router();
 const Bill = require("../models/bill.model");
 
 const TIMEZONE = "America/Costa_Rica";
+const TIMEZONE_OFFSET = 6 * 60 * 60 * 1000; // Costa Rica es UTC-6
 
 // ===============================
 // HELPERS FECHA (COSTA RICA)
@@ -24,6 +25,24 @@ function endOfDayCR(date) {
   return d;
 }
 
+// Convierte una cadena de fecha "YYYY-MM-DD" del input como si fuera en CR
+function dateStringToStartOfDayCR(dateString) {
+  // dateString es "YYYY-MM-DD" - lo interpretamos como inicio del día EN COSTA RICA
+  // CR 00:00 = UTC 06:00 (sumamos 6 horas porque CR es UTC-6)
+  const [year, month, day] = dateString.split('-').map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day, 6, 0, 0, 0));
+  return d;
+}
+
+// Convierte una cadena de fecha "YYYY-MM-DD" del input como si fuera en CR
+function dateStringToEndOfDayCR(dateString) {
+  // dateString es "YYYY-MM-DD" - lo interpretamos como final del día EN COSTA RICA
+  // CR 23:59:59 = UTC 05:59:59 del próximo día (CR 23:59 + 6h = UTC 05:59 del día siguiente)
+  const [year, month, day] = dateString.split('-').map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day + 1, 5, 59, 59, 999));
+  return d;
+}
+
 function dateKeyCR(date) {
   return new Date(date).toLocaleDateString("en-CA", {
     timeZone: TIMEZONE,
@@ -37,25 +56,35 @@ router.get("/ingresos", async (req, res) => {
   try {
     let { desde, hasta } = req.query;
 
-    // Si no envían fechas → últimos 30 días (CR)
+    // Obtener fechas en Costa Rica
+    let desdeDate, hastaDate;
+
     if (!desde) {
-      const d = new Date();
-      d.setDate(d.getDate() - 29);
-      desde = startOfDayCR(d);
+      // Si no viene fecha, usar últimos 29 días
+      const hoy = new Date();
+      const hace29 = new Date(hoy);
+      hace29.setDate(hace29.getDate() - 29);
+      const crDateString = hace29.toLocaleDateString("en-CA", { timeZone: "America/Costa_Rica" });
+      desdeDate = dateStringToStartOfDayCR(crDateString);
     } else {
-      desde = startOfDayCR(new Date(desde));
+      // La fecha viene como "YYYY-MM-DD" del input - interpretarla como CR
+      desdeDate = dateStringToStartOfDayCR(desde);
     }
 
     if (!hasta) {
-      hasta = endOfDayCR(new Date());
+      // Si no viene fecha, usar hoy
+      const hoy = new Date();
+      const crDateString = hoy.toLocaleDateString("en-CA", { timeZone: "America/Costa_Rica" });
+      hastaDate = dateStringToEndOfDayCR(crDateString);
     } else {
-      hasta = endOfDayCR(new Date(hasta));
+      // La fecha viene como "YYYY-MM-DD" del input - interpretarla como CR
+      hastaDate = dateStringToEndOfDayCR(hasta);
     }
 
-    // Buscar facturas pagadas dentro del rango (UTC guardado, CR calculado)
+    // Buscar facturas pagadas dentro del rango
     const facturas = await Bill.find({
       estado: "pagada",
-      pagadoEn: { $gte: desde, $lte: hasta },
+      pagadoEn: { $gte: desdeDate, $lte: hastaDate },
     }).sort({ pagadoEn: 1 });
 
     // Total general
@@ -74,11 +103,15 @@ router.get("/ingresos", async (req, res) => {
       total: dias[d],
     }));
 
+    // Convertir fechas a formato ISO string para el formulario
+    const desdeISO = dateKeyCR(desdeDate);
+    const hastaISO = dateKeyCR(hastaDate);
+
     res.render("reportes.ingresos.ejs", {
       total,
       resumenDias,
-      desde: dateKeyCR(desde),
-      hasta: dateKeyCR(hasta),
+      desde: desdeISO,
+      hasta: hastaISO,
       activePage: "ingresos",
     });
   } catch (err) {
