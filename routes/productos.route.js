@@ -220,19 +220,16 @@ const menuSeed = [
   { nombre: "Sabor batido: mango", categoria: "Batidos - sabor", precio: 0 },
 ];
 
-// 👉 Ruta para sembrar el menú (solo la usas una vez)
+// 👉 Ruta para sembrar/sincronizar el menú (puedes llamarla varias veces)
+// Inserta todos los elementos de `menuSeed`, ignorando duplicados existentes.
 router.get("/init", async (req, res) => {
   try {
-    const count = await Product.countDocuments();
-    if (count > 0) {
-      return res.send("Ya hay productos en la base de datos. (No se volvió a sembrar)");
-    }
-
-    await Product.insertMany(menuSeed);
-    res.send("Menú de Donde Indio insertado correctamente 🍽️");
+    // Usamos ordered: false para que la inserción continúe aunque encuentre duplicados
+    await Product.insertMany(menuSeed, { ordered: false }).catch(() => {});
+    res.send("Menú sincronizado correctamente (duplicados ignorados) ✅");
   } catch (err) {
-    console.error("Error sembrando menú:", err);
-    res.status(500).send("Error sembrando menú: " + (err.message || "desconocido"));
+    console.error("Error sincronizando menú:", err);
+    res.status(500).send("Error sincronizando menú: " + (err.message || "desconocido"));
   }
 });
 
