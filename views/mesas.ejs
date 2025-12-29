@@ -28,7 +28,8 @@
               <%= mesa.estado === 'ocupada' ? 'bg-danger text-white' : 'bg-success text-white' %>"
             >
               <div class="card-body">
-                <h5 class="card-title">Mesa <%= mesa.numero %></h5>
+                <% const isBarra = mesa.numero > 10; %>
+                <h5 class="card-title"><%= isBarra ? 'Barra ' + (mesa.numero - 10) : 'Mesa ' + mesa.numero %></h5>
                 <p class="card-text">
                   <%= mesa.estado === 'ocupada' ? 'Ocupada' : 'Libre' %>
                 </p>

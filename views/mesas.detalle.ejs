@@ -17,7 +17,8 @@
 
       <!-- ENCABEZADO -->
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h3 mb-0">Mesa <%= mesa.numero %></h1>
+        <% const isBarraHeader = mesa.numero > 10; %>
+        <h1 class="h3 mb-0"><%= isBarraHeader ? 'Barra ' + (mesa.numero - 10) : 'Mesa ' + mesa.numero %></h1>
 
         <a href="/mesas" class="btn btn-secondary btn-sm">
           ⬅ Volver a mesas
@@ -41,27 +42,64 @@
           <h2 class="h5 mb-3">Agregar producto a la cuenta</h2>
 
           <form
+            id="formAgregarProducto"
             action="/mesas/<%= mesa.numero %>/items"
             method="POST"
             class="row g-2 align-items-end"
           >
             <div class="col-md-6">
-              <label for="productoId" class="form-label">Producto</label>
-              <select
-                id="productoId"
-                name="productoId"
-                class="form-select"
-                required
-              >
-                <option value="">Seleccionar...</option>
-                <% if (productos && productos.length > 0) { %>
-                  <% productos.forEach(function(prod) { %>
-                    <option value="<%= prod._id %>">
-                      <%= prod.categoria %> - <%= prod.nombre %> (₡<%= prod.precio.toLocaleString('es-CR') %>)
-                    </option>
-                  <% }); %>
-                <% } %>
-              </select>
+              <ul class="nav nav-tabs mb-2" id="productoTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active" id="tab-select" data-bs-toggle="tab" data-bs-target="#contenido-select" type="button" role="tab">
+                    Menú
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="tab-buscar" data-bs-toggle="tab" data-bs-target="#contenido-buscar" type="button" role="tab">
+                    Buscar
+                  </button>
+                </li>
+              </ul>
+              
+              <div class="tab-content" id="productoTabContent">
+                <!-- TAB 1: MENÚ SELECT ORIGINAL -->
+                <div class="tab-pane fade show active" id="contenido-select" role="tabpanel">
+                  <label for="productoId" class="form-label">Producto</label>
+                  <select
+                    id="productoId"
+                    name="productoId"
+                    class="form-select"
+                  >
+                    <option value="">Seleccionar...</option>
+                    <% if (productos && productos.length > 0) { %>
+                      <% productos.forEach(function(prod) { %>
+                        <option value="<%= prod._id %>">
+                          <%= prod.categoria %> - <%= prod.nombre %> (₡<%= prod.precio.toLocaleString('es-CR') %>)
+                        </option>
+                      <% }); %>
+                    <% } %>
+                  </select>
+                </div>
+
+                <!-- TAB 2: BUSCADOR -->
+                <div class="tab-pane fade" id="contenido-buscar" role="tabpanel">
+                  <label for="productoBuscar" class="form-label">Buscar producto</label>
+                  <div class="position-relative">
+                    <input
+                      type="text"
+                      id="productoBuscar"
+                      class="form-control"
+                      placeholder="Escribe el nombre del producto..."
+                      autocomplete="off"
+                    />
+                    <div
+                      id="productosLista"
+                      class="list-group position-absolute w-100 mt-1"
+                      style="max-height: 300px; overflow-y: auto; display: none; z-index: 1000; background: white; border: 1px solid #dee2e6;"
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="col-md-3">
@@ -234,6 +272,95 @@
       <% } %>
 
     </div>
+
+    <script>
+      // Productos disponibles desde el servidor
+      const productos = <%- JSON.stringify(productos) %>;
+      const inputBuscar = document.getElementById("productoBuscar");
+      const inputSelectMenu = document.getElementById("productoId");
+      const listaProductos = document.getElementById("productosLista");
+      const formAgregarProducto = document.getElementById("formAgregarProducto");
+
+      // Validar el formulario antes de enviar
+      formAgregarProducto.addEventListener("submit", function(e) {
+        if (!inputSelectMenu.value) {
+          e.preventDefault();
+          alert("Por favor selecciona un producto");
+          return false;
+        }
+      });
+
+      // Filtrar y mostrar sugerencias mientras escribes
+      inputBuscar.addEventListener("input", function() {
+        const busqueda = this.value.toLowerCase().trim();
+
+        if (busqueda.length === 0) {
+          listaProductos.style.display = "none";
+          return;
+        }
+
+        // Filtrar productos que coincidan con la búsqueda
+        const sugerencias = productos.filter(prod => 
+          prod.nombre.toLowerCase().includes(busqueda) ||
+          prod.categoria.toLowerCase().includes(busqueda)
+        );
+
+        // Mostrar sugerencias
+        if (sugerencias.length > 0) {
+          listaProductos.innerHTML = sugerencias.map(prod => `
+            <button 
+              type="button"
+              class="list-group-item list-group-item-action text-start" 
+              data-id="${prod._id}"
+              data-label="${prod.categoria} - ${prod.nombre} (₡${prod.precio.toLocaleString('es-CR')})"
+              style="border: none; background: none; padding: 0.75rem 1.25rem; width: 100%; text-align: left;"
+            >
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">${prod.categoria} - ${prod.nombre}</h6>
+                <span class="text-muted">₡${prod.precio.toLocaleString('es-CR')}</span>
+              </div>
+            </button>
+          `).join("");
+          
+          // Agregar event listeners a los botones
+          const botones = listaProductos.querySelectorAll("button");
+          botones.forEach(btn => {
+            btn.addEventListener("click", function(e) {
+              e.preventDefault();
+              const id = this.getAttribute("data-id");
+              const label = this.getAttribute("data-label");
+              selectProductoBuscar(id, label);
+            });
+          });
+          
+          listaProductos.style.display = "block";
+        } else {
+          listaProductos.innerHTML = '<div class="list-group-item text-muted">No se encontraron productos</div>';
+          listaProductos.style.display = "block";
+        }
+      });
+
+      // Seleccionar un producto del buscador
+      function selectProductoBuscar(id, label) {
+        inputSelectMenu.value = id;
+        inputBuscar.value = label;
+        listaProductos.style.display = "none";
+      }
+
+      // Cerrar lista al hacer click fuera
+      document.addEventListener("click", function(e) {
+        if (e.target !== inputBuscar && !listaProductos.contains(e.target)) {
+          listaProductos.style.display = "none";
+        }
+      });
+
+      // Permitir cerrar la lista con ESC
+      inputBuscar.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+          listaProductos.style.display = "none";
+        }
+      });
+    </script>
 
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"

@@ -25,7 +25,7 @@
       <div class="card mb-4">
         <div class="card-body">
           <h5 class="card-title">
-            Mesa <%= factura.mesa %>
+            <%= factura.mesa > 10 ? 'Barra ' + (factura.mesa - 10) : 'Mesa ' + factura.mesa %>
           </h5>
           <p class="card-text mb-1">
             <strong>Fecha:</strong>

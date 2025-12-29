@@ -204,6 +204,9 @@ const menuSeed = [
   { nombre: "Batido en agua (sabores varios)", categoria: "Batidos", precio: 1500 },
   { nombre: "Batido en leche (sabores varios)", categoria: "Batidos", precio: 2000 },
 
+    // === BEBIDAS – GASEOSAS (1200) ===
+  { nombre: "Refresco gaseosas", categoria: "Bebidas gaseosas", precio: 1200 },
+
   // Sabores sugeridos (si quieres llevar registro por sabor)
   { nombre: "Sabor batido: fresa", categoria: "Batidos - sabor", precio: 0 },
   { nombre: "Sabor batido: mora", categoria: "Batidos - sabor", precio: 0 },

@@ -9,19 +9,23 @@ const Product = require("../models/product.model");
 // 🔹 Inicializar las 10 mesas
 router.get("/init", async (req, res) => {
   try {
-    const count = await Table.countDocuments();
+    // Asegurarse de que existan los números 1..13 (mesas 1-10 + barras 1-3 como 11-13)
+    const existing = await Table.find({ numero: { $gte: 1, $lte: 13 } }).select("numero").lean();
+    const existingNums = new Set(existing.map((e) => e.numero));
 
-    if (count === 0) {
-      const mesas = [];
-      for (let i = 1; i <= 10; i++) {
-        mesas.push({ numero: i });
-      }
-
-      await Table.insertMany(mesas);
-      return res.send("Mesas inicializadas (1 a 10)");
+    const toInsert = [];
+    for (let n = 1; n <= 13; n++) {
+      if (!existingNums.has(n)) toInsert.push({ numero: n });
     }
 
-    res.send("Las mesas ya existen en la base de datos");
+    if (toInsert.length > 0) {
+      await Table.insertMany(toInsert);
+      return res.send(
+        `Se crearon ${toInsert.length} mesas/barras faltantes: ${toInsert.map((t) => t.numero).join(", ")}`
+      );
+    }
+
+    res.send("Mesas y barras (1 a 13) ya existen en la base de datos");
   } catch (err) {
     console.error("Error en /mesas/init:", err);
     res.status(500).send("Error inicializando mesas");
@@ -38,6 +42,7 @@ router.get("/", async (req, res) => {
     res.status(500).send("Error cargando mesas");
   }
 });
+
 
 // 🔹 Detalle de una mesa
 router.get("/:numero", async (req, res) => {
@@ -396,6 +401,7 @@ router.get("/:numero/cobrar", async (req, res) => {
   }
 });
 
+ 
 // 🔹 Procesar cobro
 router.post("/:numero/cobrar", async (req, res) => {
   try {
