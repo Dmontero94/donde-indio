@@ -29,7 +29,7 @@
           </h5>
           <p class="card-text mb-1">
             <strong>Fecha:</strong>
-            <%= new Date(factura.pagadoEn || factura.creadoEn).toLocaleString("es-CR") %>
+            <%= new Date(factura.pagadoEn || factura.creadoEn).toLocaleString("es-CR", { timeZone: "America/Costa_Rica" }) %>
           </p>
           <p class="card-text mb-1">
             <strong>Método de pago:</strong>

@@ -125,7 +125,36 @@ router.get("/ingresos", async (req, res) => {
 // ===============================
 router.get("/top-productos", async (req, res) => {
   try {
-    const facturas = await Bill.find({ estado: "pagada" });
+    let { desde, hasta } = req.query;
+
+    // Obtener fechas en Costa Rica
+    let desdeDate, hastaDate;
+
+    if (!desde) {
+      // Si no viene fecha, usar últimos 29 días
+      const hoy = new Date();
+      const hace29 = new Date(hoy);
+      hace29.setDate(hace29.getDate() - 29);
+      const crDateString = hace29.toLocaleDateString("en-CA", { timeZone: "America/Costa_Rica" });
+      desdeDate = dateStringToStartOfDayCR(crDateString);
+    } else {
+      desdeDate = dateStringToStartOfDayCR(desde);
+    }
+
+    if (!hasta) {
+      // Si no viene fecha, usar hoy
+      const hoy = new Date();
+      const crDateString = hoy.toLocaleDateString("en-CA", { timeZone: "America/Costa_Rica" });
+      hastaDate = dateStringToEndOfDayCR(crDateString);
+    } else {
+      hastaDate = dateStringToEndOfDayCR(hasta);
+    }
+
+    // Buscar facturas pagadas dentro del rango
+    const facturas = await Bill.find({
+      estado: "pagada",
+      pagadoEn: { $gte: desdeDate, $lte: hastaDate },
+    });
 
     const conteo = {};
 
@@ -147,8 +176,14 @@ router.get("/top-productos", async (req, res) => {
       (a, b) => b.cantidad - a.cantidad
     );
 
+    // Convertir fechas a formato ISO string para el formulario
+    const desdeISO = dateKeyCR(desdeDate);
+    const hastaISO = dateKeyCR(hastaDate);
+
     res.render("reportes.top-productos.ejs", {
       lista,
+      desde: desdeISO,
+      hasta: hastaISO,
       activePage: "top-productos",
     });
   } catch (err) {

@@ -32,7 +32,7 @@
           <tbody>
             <% facturas.forEach(f => { %>
               <tr>
-                <td><%= new Date(f.pagadoEn).toLocaleString("es-CR") %></td>
+                <td><%= new Date(f.pagadoEn).toLocaleString("es-CR", { timeZone: "America/Costa_Rica" }) %></td>
                 <td>Mesa <%= f.mesa %></td>
                 <td>₡<%= f.total.toLocaleString("es-CR") %></td>
                 <td><%= f.metodoPago === 'sinpe' ? 'SINPE' : 'Efectivo' %></td>
