@@ -3,49 +3,68 @@ const express = require("express");
 const router = express.Router();
 const Bill = require("../models/bill.model");
 
-// Helper para normalizar fecha al inicio del día
-function startOfDay(date) {
-  const d = new Date(date);
+const TIMEZONE = "America/Costa_Rica";
+
+// ===============================
+// HELPERS FECHA (COSTA RICA)
+// ===============================
+function startOfDayCR(date) {
+  const d = new Date(
+    new Date(date).toLocaleString("en-US", { timeZone: TIMEZONE })
+  );
   d.setHours(0, 0, 0, 0);
   return d;
 }
 
-function endOfDay(date) {
-  const d = new Date(date);
+function endOfDayCR(date) {
+  const d = new Date(
+    new Date(date).toLocaleString("en-US", { timeZone: TIMEZONE })
+  );
   d.setHours(23, 59, 59, 999);
   return d;
 }
 
+function dateKeyCR(date) {
+  return new Date(date).toLocaleDateString("en-CA", {
+    timeZone: TIMEZONE,
+  });
+}
+
 // ===============================
-// RANGO DE FECHAS
+// RANGO DE FECHAS - INGRESOS
 // ===============================
 router.get("/ingresos", async (req, res) => {
   try {
     let { desde, hasta } = req.query;
 
-    const hoy = new Date();
-    const inicioHoy = startOfDay(hoy);
+    // Si no envían fechas → últimos 30 días (CR)
+    if (!desde) {
+      const d = new Date();
+      d.setDate(d.getDate() - 29);
+      desde = startOfDayCR(d);
+    } else {
+      desde = startOfDayCR(new Date(desde));
+    }
 
-    // Si no envían fechas → por defecto últimos 30 días
-    if (!desde) desde = startOfDay(new Date(hoy.setDate(hoy.getDate() - 29)));
-    else desde = startOfDay(new Date(desde));
+    if (!hasta) {
+      hasta = endOfDayCR(new Date());
+    } else {
+      hasta = endOfDayCR(new Date(hasta));
+    }
 
-    if (!hasta) hasta = endOfDay(new Date());
-    else hasta = endOfDay(new Date(hasta));
-
-    // Buscar facturas pagadas dentro del rango
+    // Buscar facturas pagadas dentro del rango (UTC guardado, CR calculado)
     const facturas = await Bill.find({
       estado: "pagada",
       pagadoEn: { $gte: desde, $lte: hasta },
     }).sort({ pagadoEn: 1 });
 
-    // Calcular total general
+    // Total general
     const total = facturas.reduce((acc, f) => acc + f.total, 0);
 
-    // Agrupación por día
+    // Agrupación por día (Costa Rica)
     const dias = {};
     facturas.forEach((f) => {
-      const clave = startOfDay(f.pagadoEn).toISOString().slice(0, 10);
+      const clave = dateKeyCR(f.pagadoEn);
       if (!dias[clave]) dias[clave] = 0;
       dias[clave] += f.total;
     });
@@ -56,13 +75,12 @@ router.get("/ingresos", async (req, res) => {
     }));
 
     res.render("reportes.ingresos.ejs", {
-    total,
-    resumenDias,
-    desde: desde.toISOString().slice(0, 10),
-    hasta: hasta.toISOString().slice(0, 10),
-    activePage: "ingresos",
-});
-
+      total,
+      resumenDias,
+      desde: dateKeyCR(desde),
+      hasta: dateKeyCR(hasta),
+      activePage: "ingresos",
+    });
   } catch (err) {
     console.error("Error en GET /reportes/ingresos:", err);
     res.status(500).send("Error cargando reporte");
@@ -74,7 +92,6 @@ router.get("/ingresos", async (req, res) => {
 // ===============================
 router.get("/top-productos", async (req, res) => {
   try {
-    // Solo facturas pagadas
     const facturas = await Bill.find({ estado: "pagada" });
 
     const conteo = {};
@@ -97,14 +114,19 @@ router.get("/top-productos", async (req, res) => {
       (a, b) => b.cantidad - a.cantidad
     );
 
-    res.render("reportes.top-productos.ejs", { lista, activePage: "top-productos" });
+    res.render("reportes.top-productos.ejs", {
+      lista,
+      activePage: "top-productos",
+    });
   } catch (err) {
     console.error("Error en top productos:", err);
     res.status(500).send("Error cargando top productos");
   }
 });
 
+// ===============================
 // HISTORIAL DE FACTURAS
+// ===============================
 router.get("/facturas", async (req, res) => {
   try {
     const facturas = await Bill.find({ estado: "pagada" }).sort({
@@ -121,11 +143,12 @@ router.get("/facturas", async (req, res) => {
   }
 });
 
-// DETALLE DE UNA FACTURA
+// ===============================
+// DETALLE DE FACTURA
+// ===============================
 router.get("/facturas/:id", async (req, res) => {
   try {
-    const id = req.params.id;
-    const factura = await Bill.findById(id);
+    const factura = await Bill.findById(req.params.id);
 
     if (!factura) {
       return res.status(404).send("Factura no encontrada");
