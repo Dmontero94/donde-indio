@@ -100,6 +100,9 @@ router.post("/apertura", requireLogin, async (req, res) => {
     // Determinar usuario responsable (campo opcional en el formulario)
     const usuarioResponsable = usuarioApertura && usuarioApertura.trim().length > 0 ? usuarioApertura.trim() : username;
 
+    // Obtener hora de apertura en Costa Rica
+    const aperturaHora = DateTime.now().setZone(TIMEZONE_CR);
+
     // Crear nueva apertura de caja
     const nuevaCaja = new CashRegister({
       fecha: today,
@@ -110,6 +113,7 @@ router.post("/apertura", requireLogin, async (req, res) => {
       totalEfectivo: 0,
       totalSinpe: 0,
       estado: "abierta",
+      horaApertura: aperturaHora.toJSDate(),
     });
 
     await nuevaCaja.save();
@@ -301,7 +305,7 @@ router.post("/cierre", requireLogin, async (req, res) => {
     caja.totalSinpe = totalSinpe;
     caja.totalIngresos = totalIngresos;
     caja.montoCierre = montoCierre;
-    caja.horaCierre = new Date();
+    caja.horaCierre = DateTime.now().setZone(TIMEZONE_CR).toJSDate();
     caja.estado = "cerrada";
     caja.notas = req.body.notas || "";
 

@@ -169,14 +169,14 @@
               <div class="detail-row">
                 <span>Hora de Apertura:</span>
                 <span
-                  ><%= new Date(caja.horaApertura).toLocaleTimeString('es-CR') %></span
+                  ><%= new Date(caja.horaApertura).toLocaleTimeString('es-CR', { timeZone: "America/Costa_Rica" }) %></span
                 >
               </div>
 
               <div class="detail-row">
                 <span>Hora de Cierre:</span>
                 <span
-                  ><%= caja.horaCierre ? new Date(caja.horaCierre).toLocaleTimeString('es-CR') : 'N/A' %></span
+                  ><%= caja.horaCierre ? new Date(caja.horaCierre).toLocaleTimeString('es-CR', { timeZone: "America/Costa_Rica" }) : 'N/A' %></span
                 >
               </div>
 

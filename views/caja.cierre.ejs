@@ -158,7 +158,7 @@
                 <div class="detail-item">
                   <span>Apertura:</span>
                   <span
-                    ><%= new Date(caja.horaApertura).toLocaleTimeString('es-CR') %></span
+                    ><%= new Date(caja.horaApertura).toLocaleTimeString('es-CR', { timeZone: "America/Costa_Rica" }) %></span
                   >
                 </div>
                 <div class="detail-item">
