@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const CashRegister = require("../models/cashregister.model");
 const Bill = require("../models/bill.model");
+const { DateTime } = require("luxon");
 
 // Middleware: verificar que el usuario esté logueado
 const requireLogin = (req, res, next) => {
@@ -22,8 +23,7 @@ router.get("/apertura", requireLogin, async (req, res) => {
     const username = req.session.user.username;
 
     // Verificar si ya hay una caja abierta HOY
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = DateTime.now().setZone("America/Costa_Rica").startOf("day").toJSDate();
 
     const cajaAbierta = await CashRegister.findOne({
       fecha: today,
@@ -69,8 +69,7 @@ router.post("/apertura", requireLogin, async (req, res) => {
     }
 
     // Verificar si ya existe apertura hoy (solo bloquear si hay una abierta)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = DateTime.now().setZone("America/Costa_Rica").startOf("day").toJSDate();
 
     // Si el mismo usuario ya tiene una caja ABIERTA hoy, evitar duplicados
     const abiertaMismoUsuario = await CashRegister.findOne({
@@ -163,10 +162,10 @@ router.get("/cierre", requireLogin, async (req, res) => {
 
     // Calcular totales del día para mostrar antes de cerrar (sin persistir)
     try {
-      const cajaFecha = new Date(caja.fecha);
-      cajaFecha.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(cajaFecha);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      const currentDate = DateTime.now().setZone("America/Costa_Rica").startOf("day");
+      const tomorrowDate = currentDate.plus({ days: 1 });
+      const cajaFecha = currentDate.toJSDate();
+      const tomorrow = tomorrowDate.toJSDate();
 
       console.log("GET /cash/cierre - buscando facturas entre:", cajaFecha, "y", tomorrow);
 
@@ -237,10 +236,10 @@ router.post("/cierre", requireLogin, async (req, res) => {
     }
 
     // Obtener todas las facturas pagadas del día usando la fecha de la caja
-    const cajaFecha = new Date(caja.fecha);
-    cajaFecha.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(cajaFecha);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const currentDate = DateTime.now().setZone("America/Costa_Rica").startOf("day");
+    const tomorrowDate = currentDate.plus({ days: 1 });
+    const cajaFecha = currentDate.toJSDate();
+    const tomorrow = tomorrowDate.toJSDate();
 
     console.log("Buscando facturas para la caja (fecha):", cajaFecha, "y", tomorrow);
 

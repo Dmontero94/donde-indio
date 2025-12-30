@@ -112,7 +112,7 @@
       <div class="report-header">
         <h2>📊 Reporte de Cierre de Caja</h2>
         <p
-          ><%= new Date(caja.fecha).toLocaleDateString('es-CR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></p
+          ><%= new Date(caja.fecha).toLocaleDateString('es-CR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: "America/Costa_Rica" }) %></p
         >
         <p>Usuario: <strong><%= caja.usuario %></strong></p>
       </div>

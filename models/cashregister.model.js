@@ -1,13 +1,12 @@
 // models/cashregister.model.js
 const mongoose = require("mongoose");
+const { DateTime } = require("luxon");
 
 const cashRegisterSchema = new mongoose.Schema({
   fecha: {
     type: Date,
     default: () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return today;
+      return DateTime.now().setZone("America/Costa_Rica").startOf("day").toJSDate();
     },
     required: true,
   },
