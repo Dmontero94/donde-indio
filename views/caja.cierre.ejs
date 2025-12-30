@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cierre de Caja - Donde Indio</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #f5f5f5;
+      }
+      .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .summary-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+      .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .summary-item:last-child {
+        border-bottom: none;
+      }
+      .summary-item strong {
+        font-weight: 600;
+      }
+      .amount {
+        font-size: 18px;
+        font-weight: bold;
+      }
+      .form-label {
+        font-weight: 600;
+        color: #333;
+      }
+      .btn-close-cash {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        border-radius: 8px;
+      }
+      .btn-close-cash:hover {
+        background: linear-gradient(135deg, #e07eeb 0%, #e0465c 100%);
+        color: white;
+      }
+      .alert {
+        border-radius: 10px;
+        border: none;
+      }
+      .detail-box {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+      }
+      .detail-box h6 {
+        color: #667eea;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .detail-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .detail-item:last-child {
+        border-bottom: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <%- include('partials/navbar') %>
+
+    <div class="container my-4">
+      <% if (error) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>❌ Error:</strong> <%= error %>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      <% } %>
+
+      <div class="row">
+        <!-- Resumen de Caja -->
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-body">
+              <h3 class="mb-4">
+                <i class="fas fa-cash-register"></i> Cierre de Caja
+              </h3>
+
+              <% if (caja) { %>
+              <% if (!isOwner) { %>
+              <div class="alert alert-warning">
+                ⚠️ Estás cerrando una caja que fue abierta por <strong><%= caja.usuario %></strong>.
+                Se registrará que el cierre lo hizo <strong><%= currentUser.username %></strong>.
+              </div>
+              <% } %>
+              <!-- Resumen Principal -->
+              <div class="summary-box">
+                <div class="summary-item">
+                  <span>🔓 Monto de Apertura:</span>
+                  <span class="amount"
+                    >₡ <%= caja.montoApertura.toLocaleString('es-CR', { minimumFractionDigits: 2 }) %></span
+                  >
+                </div>
+
+                <div class="summary-item">
+                  <span>💵 Total en Efectivo:</span>
+                  <span class="amount"
+                    >₡ <%= caja.totalEfectivo.toLocaleString('es-CR', { minimumFractionDigits: 2 }) %></span
+                  >
+                </div>
+
+                <div class="summary-item">
+                  <span>📱 Total en SINPE:</span>
+                  <span class="amount"
+                    >₡ <%= caja.totalSinpe.toLocaleString('es-CR', { minimumFractionDigits: 2 }) %></span
+                  >
+                </div>
+
+                <div class="summary-item">
+                  <span>📊 Total Ingresos:</span>
+                  <span class="amount"
+                    >₡ <%= caja.totalIngresos.toLocaleString('es-CR', { minimumFractionDigits: 2 }) %></span
+                  >
+                </div>
+
+                <div class="summary-item" style="border-bottom: none; margin-top: 15px; padding-top: 15px; border-top: 2px solid rgba(255, 255, 255, 0.3)">
+                  <span style="font-size: 18px">🔒 Total en Caja:</span>
+                  <span class="amount" style="font-size: 22px"
+                    >₡ <%= (caja.montoApertura + caja.totalIngresos).toLocaleString('es-CR', { minimumFractionDigits: 2 }) %></span
+                  >
+                </div>
+              </div>
+
+              <!-- Detalles -->
+              <div class="detail-box">
+                <h6>📋 Detalles</h6>
+                <div class="detail-item">
+                  <span>Apertura:</span>
+                  <span
+                    ><%= new Date(caja.horaApertura).toLocaleTimeString('es-CR') %></span
+                  >
+                </div>
+                <div class="detail-item">
+                  <span>Fecha:</span>
+                  <span
+                    ><%= new Date(caja.fecha).toLocaleDateString('es-CR') %></span
+                  >
+                </div>
+              </div>
+
+              <!-- Formulario Cierre -->
+              <form id="formCierre">
+                <div class="mb-3">
+                  <label for="notas" class="form-label">Notas (Opcional)</label>
+                  <textarea
+                    class="form-control"
+                    id="notas"
+                    name="notas"
+                    rows="3"
+                    placeholder="Ej: Se encontró diferencia de 500 colones..."
+                  ></textarea>
+                </div>
+
+                <button
+                  type="submit"
+                  class="btn btn-close-cash btn-lg w-100"
+                  id="btnCierre"
+                >
+                  🔒 Cerrar Caja
+                </button>
+              </form>
+              
+              <!-- Listado de facturas del día -->
+              <div class="mt-4">
+                <h6>🧾 Facturas del día</h6>
+                <% if (caja.facturas && caja.facturas.length > 0) { %>
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>ID</th>
+                        <th>Método</th>
+                        <th class="text-end">Monto</th>
+                        <th>Hora</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% caja.facturas.forEach(function(f, idx) { %>
+                      <tr>
+                        <td><%= idx + 1 %></td>
+                        <td style="max-width:200px;word-break:break-all"><%= f.billId %></td>
+                        <td><%= f.metodoPago %></td>
+                        <td class="text-end">₡ <%= f.monto.toLocaleString('es-CR', { minimumFractionDigits: 2 }) %></td>
+                        <td><%= f.pagadoEn ? new Date(f.pagadoEn).toLocaleTimeString('es-CR') : '' %></td>
+                      </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+                <% } else { %>
+                <div class="small text-muted">No hay facturas pagadas registradas para la fecha de esta caja.</div>
+                <% } %>
+              </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel Lateral -->
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="mb-3">ℹ️ Información</h5>
+              <div class="alert alert-info small" role="alert">
+                <strong>Antes de cerrar caja:</strong>
+                <ul class="mb-0 mt-2">
+                  <li>Verifica que todos los montos sean correctos</li>
+                  <li>Cuenta el efectivo en caja</li>
+                  <li>Anota cualquier diferencia encontrada</li>
+                  <li>Una vez cerrada, no se puede reabrirse</li>
+                </ul>
+              </div>
+
+              <div class="alert alert-warning small" role="alert">
+                <strong>💡 Tip:</strong> El cierre contabiliza automáticamente
+                todos los ingresos registrados del día por método de pago.
+              </div>
+
+              <a href="/" class="btn btn-secondary w-100 mt-2">
+                ← Volver al Inicio
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      document.getElementById("formCierre").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const btnCierre = document.getElementById("btnCierre");
+        btnCierre.disabled = true;
+        btnCierre.innerHTML = "⏳ Procesando...";
+
+        try {
+          const response = await fetch("/cash/cierre", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+              notas: document.getElementById("notas").value,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            // Mostrar confirmación
+            alert(
+              `✅ Caja cerrada exitosamente!\n\n` +
+                `Monto Apertura: ₡ ${data.datos.montoApertura.toLocaleString("es-CR", { minimumFractionDigits: 2 })}\n` +
+                `Total Efectivo: ₡ ${data.datos.totalEfectivo.toLocaleString("es-CR", { minimumFractionDigits: 2 })}\n` +
+                `Total SINPE: ₡ ${data.datos.totalSinpe.toLocaleString("es-CR", { minimumFractionDigits: 2 })}\n` +
+                `Total Ingresos: ₡ ${data.datos.totalIngresos.toLocaleString("es-CR", { minimumFractionDigits: 2 })}\n` +
+                `Total en Caja: ₡ ${data.datos.montoCierre.toLocaleString("es-CR", { minimumFractionDigits: 2 })}`
+            );
+            window.location.href = "/";
+          } else {
+            alert("❌ Error: " + data.error);
+            btnCierre.disabled = false;
+            btnCierre.innerHTML = "🔒 Cerrar Caja";
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("❌ Error al procesar cierre: " + error.message);
+          btnCierre.disabled = false;
+          btnCierre.innerHTML = "🔒 Cerrar Caja";
+        }
+      });
+    </script>
+  </body>
+</html>

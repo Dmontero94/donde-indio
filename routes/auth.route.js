@@ -1,6 +1,7 @@
 // routes/auth.route.js
 const express = require("express");
 const router = express.Router();
+const CashRegister = require("../models/cashregister.model");
 
 const ADMIN_USER = process.env.ADMIN_USER;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -18,19 +19,42 @@ router.get("/login", (req, res) => {
 });
 
 // Procesar login
-router.post("/login", (req, res) => {
-  const { username, password } = req.body;
+router.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
 
-  if (username === ADMIN_USER && password === ADMIN_PASSWORD) {
-    // Guardamos usuario en sesión
-    req.session.user = { username };
-    return res.redirect("/");
+    if (username === ADMIN_USER && password === ADMIN_PASSWORD) {
+      // Guardamos usuario en sesión
+      req.session.user = { username };
+
+      // Verificar si hay caja abierta hoy
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const cajaAbierta = await CashRegister.findOne({
+        fecha: today,
+        usuario: username,
+        estado: "abierta",
+      });
+
+      // Si existe caja abierta, guardarla en sesión
+      if (cajaAbierta) {
+        req.session.cajaActiva = cajaAbierta._id.toString();
+      }
+
+      return res.redirect("/");
+    }
+
+    // Si falla: recargamos el formulario con mensaje
+    res.status(401).render("auth.login.ejs", {
+      error: "Usuario o contraseña incorrectos",
+    });
+  } catch (error) {
+    console.error("Error en POST /login:", error);
+    res.status(500).render("auth.login.ejs", {
+      error: "Error al procesar login",
+    });
   }
-
-  // Si falla: recargamos el formulario con mensaje
-  res.status(401).render("auth.login.ejs", {
-    error: "Usuario o contraseña incorrectos",
-  });
 });
 
 // Logout

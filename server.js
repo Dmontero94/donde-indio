@@ -56,6 +56,12 @@ app.get("/", (req, res) => {
   if (!req.session.user) {
     return res.redirect("/login");
   }
+  
+  // Verificar si hay caja abierta
+  if (!req.session.cajaActiva) {
+    return res.redirect("/cash/apertura");
+  }
+  
   res.render("inicio.ejs", { activePage: "inicio" });
 });
 
@@ -72,6 +78,7 @@ const mesasRoutes = require("./routes/mesas.route");
 const productosRoutes = require("./routes/productos.route");
 const reportesRoutes = require("./routes/reportes.route");
 const authRoutes = require("./routes/auth.route");
+const cashRoutes = require("./routes/cash.route");
 
 // Rutas públicas (login/logout)
 app.use("/", authRoutes);
@@ -80,6 +87,7 @@ app.use("/", authRoutes);
 app.use("/mesas", requireAuth, mesasRoutes);
 app.use("/productos", requireAuth, productosRoutes);
 app.use("/reportes", requireAuth, reportesRoutes);
+app.use("/cash", requireAuth, cashRoutes);
 
 // Iniciar servidor
 app.listen(PORT, "0.0.0.0", () => {
