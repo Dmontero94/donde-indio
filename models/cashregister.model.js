@@ -2,11 +2,14 @@
 const mongoose = require("mongoose");
 const { DateTime } = require("luxon");
 
+// Timezone constant for Costa Rica
+const TIMEZONE_CR = "America/Costa_Rica";
+
 const cashRegisterSchema = new mongoose.Schema({
   fecha: {
     type: Date,
     default: () => {
-      return DateTime.now().setZone("America/Costa_Rica").startOf("day").toJSDate();
+      return DateTime.now().setZone(TIMEZONE_CR).startOf("day").toJSDate();
     },
     required: true,
   },
