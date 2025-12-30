@@ -17,7 +17,13 @@ const cashRegisterSchema = new mongoose.Schema({
 
   // APERTURA
   montoApertura: { type: Number, default: 0 },
-  horaApertura: { type: Date, default: Date.now },
+  horaApertura: {
+    type: Date,
+    default: () => {
+      return DateTime.now().setZone(TIMEZONE_CR).toJSDate();
+    },
+    required: true,
+  },
 
   // INGRESOS DEL DÍA
   totalEfectivo: { type: Number, default: 0 },
