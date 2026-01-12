@@ -1,13 +1,15 @@
 // models/cashregister.model.js
 const mongoose = require("mongoose");
+const { DateTime } = require("luxon");
+
+// Timezone constant for Costa Rica
+const TIMEZONE_CR = "America/Costa_Rica";
 
 const cashRegisterSchema = new mongoose.Schema({
   fecha: {
     type: Date,
     default: () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return today;
+      return DateTime.now().setZone(TIMEZONE_CR).startOf("day").toJSDate();
     },
     required: true,
   },
@@ -15,7 +17,13 @@ const cashRegisterSchema = new mongoose.Schema({
 
   // APERTURA
   montoApertura: { type: Number, default: 0 },
-  horaApertura: { type: Date, default: Date.now },
+  horaApertura: {
+    type: Date,
+    default: () => {
+      return DateTime.now().setZone(TIMEZONE_CR).toJSDate();
+    },
+    required: true,
+  },
 
   // INGRESOS DEL DÍA
   totalEfectivo: { type: Number, default: 0 },

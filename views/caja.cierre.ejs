@@ -158,13 +158,13 @@
                 <div class="detail-item">
                   <span>Apertura:</span>
                   <span
-                    ><%= new Date(caja.horaApertura).toLocaleTimeString('es-CR') %></span
+                    ><%= new Date(caja.horaApertura).toLocaleTimeString('es-CR', { timeZone: "America/Costa_Rica" }) %></span
                   >
                 </div>
                 <div class="detail-item">
                   <span>Fecha:</span>
                   <span
-                    ><%= new Date(caja.fecha).toLocaleDateString('es-CR') %></span
+                    ><%= new Date(caja.fecha).toLocaleDateString('es-CR', { timeZone: "America/Costa_Rica" }) %></span
                   >
                 </div>
               </div>

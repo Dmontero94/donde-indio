@@ -112,7 +112,7 @@
       <div class="report-header">
         <h2>📊 Reporte de Cierre de Caja</h2>
         <p
-          ><%= new Date(caja.fecha).toLocaleDateString('es-CR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></p
+          ><%= new Date(caja.fecha).toLocaleDateString('es-CR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: "America/Costa_Rica" }) %></p
         >
         <p>Usuario: <strong><%= caja.usuario %></strong></p>
       </div>
@@ -169,14 +169,14 @@
               <div class="detail-row">
                 <span>Hora de Apertura:</span>
                 <span
-                  ><%= new Date(caja.horaApertura).toLocaleTimeString('es-CR') %></span
+                  ><%= new Date(caja.horaApertura).toLocaleTimeString('es-CR', { timeZone: "America/Costa_Rica" }) %></span
                 >
               </div>
 
               <div class="detail-row">
                 <span>Hora de Cierre:</span>
                 <span
-                  ><%= caja.horaCierre ? new Date(caja.horaCierre).toLocaleTimeString('es-CR') : 'N/A' %></span
+                  ><%= caja.horaCierre ? new Date(caja.horaCierre).toLocaleTimeString('es-CR', { timeZone: "America/Costa_Rica" }) : 'N/A' %></span
                 >
               </div>
 

@@ -3,6 +3,10 @@ const express = require("express");
 const router = express.Router();
 const CashRegister = require("../models/cashregister.model");
 const Bill = require("../models/bill.model");
+const { DateTime } = require("luxon");
+
+// Timezone constant for Costa Rica
+const TIMEZONE_CR = "America/Costa_Rica";
 
 // Middleware: verificar que el usuario esté logueado
 const requireLogin = (req, res, next) => {
@@ -22,8 +26,7 @@ router.get("/apertura", requireLogin, async (req, res) => {
     const username = req.session.user.username;
 
     // Verificar si ya hay una caja abierta HOY
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = DateTime.now().setZone(TIMEZONE_CR).startOf("day").toJSDate();
 
     const cajaAbierta = await CashRegister.findOne({
       fecha: today,
@@ -69,8 +72,7 @@ router.post("/apertura", requireLogin, async (req, res) => {
     }
 
     // Verificar si ya existe apertura hoy (solo bloquear si hay una abierta)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = DateTime.now().setZone(TIMEZONE_CR).startOf("day").toJSDate();
 
     // Si el mismo usuario ya tiene una caja ABIERTA hoy, evitar duplicados
     const abiertaMismoUsuario = await CashRegister.findOne({
@@ -98,6 +100,9 @@ router.post("/apertura", requireLogin, async (req, res) => {
     // Determinar usuario responsable (campo opcional en el formulario)
     const usuarioResponsable = usuarioApertura && usuarioApertura.trim().length > 0 ? usuarioApertura.trim() : username;
 
+    // Obtener hora de apertura en Costa Rica
+    const aperturaHora = DateTime.now().setZone(TIMEZONE_CR);
+
     // Crear nueva apertura de caja
     const nuevaCaja = new CashRegister({
       fecha: today,
@@ -108,6 +113,7 @@ router.post("/apertura", requireLogin, async (req, res) => {
       totalEfectivo: 0,
       totalSinpe: 0,
       estado: "abierta",
+      horaApertura: aperturaHora.toJSDate(),
     });
 
     await nuevaCaja.save();
@@ -163,10 +169,11 @@ router.get("/cierre", requireLogin, async (req, res) => {
 
     // Calcular totales del día para mostrar antes de cerrar (sin persistir)
     try {
-      const cajaFecha = new Date(caja.fecha);
-      cajaFecha.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(cajaFecha);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      // Use the actual caja.fecha to ensure we query bills for the correct day
+      const cajaFechaDate = DateTime.fromJSDate(new Date(caja.fecha)).setZone(TIMEZONE_CR).startOf("day");
+      const tomorrowDate = cajaFechaDate.plus({ days: 1 });
+      const cajaFecha = cajaFechaDate.toJSDate();
+      const tomorrow = tomorrowDate.toJSDate();
 
       console.log("GET /cash/cierre - buscando facturas entre:", cajaFecha, "y", tomorrow);
 
@@ -237,10 +244,11 @@ router.post("/cierre", requireLogin, async (req, res) => {
     }
 
     // Obtener todas las facturas pagadas del día usando la fecha de la caja
-    const cajaFecha = new Date(caja.fecha);
-    cajaFecha.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(cajaFecha);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Use the actual caja.fecha to ensure we query bills for the correct day
+    const cajaFechaDate = DateTime.fromJSDate(new Date(caja.fecha)).setZone(TIMEZONE_CR).startOf("day");
+    const tomorrowDate = cajaFechaDate.plus({ days: 1 });
+    const cajaFecha = cajaFechaDate.toJSDate();
+    const tomorrow = tomorrowDate.toJSDate();
 
     console.log("Buscando facturas para la caja (fecha):", cajaFecha, "y", tomorrow);
 
@@ -297,7 +305,7 @@ router.post("/cierre", requireLogin, async (req, res) => {
     caja.totalSinpe = totalSinpe;
     caja.totalIngresos = totalIngresos;
     caja.montoCierre = montoCierre;
-    caja.horaCierre = new Date();
+    caja.horaCierre = DateTime.now().setZone(TIMEZONE_CR).toJSDate();
     caja.estado = "cerrada";
     caja.notas = req.body.notas || "";
 

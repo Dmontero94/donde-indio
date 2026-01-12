@@ -2,6 +2,10 @@
 const express = require("express");
 const router = express.Router();
 const CashRegister = require("../models/cashregister.model");
+const { DateTime } = require("luxon");
+
+// Timezone constant for Costa Rica
+const TIMEZONE_CR = "America/Costa_Rica";
 
 const ADMIN_USER = process.env.ADMIN_USER;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -28,8 +32,7 @@ router.post("/login", async (req, res) => {
       req.session.user = { username };
 
       // Verificar si hay caja abierta hoy
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = DateTime.now().setZone(TIMEZONE_CR).startOf("day").toJSDate();
 
       const cajaAbierta = await CashRegister.findOne({
         fecha: today,
