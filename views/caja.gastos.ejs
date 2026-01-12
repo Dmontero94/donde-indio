@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gastos de Caja - Donde Indio</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #f5f5f5;
+      }
+      .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .header-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+      .gasto-item {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border-left: 4px solid #667eea;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .gasto-item:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .total-gastos {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+      }
+      .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .btn-delete:hover {
+        background: #c82333;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container py-4">
+      <%- include('partials/navbar') %>
+
+      <div class="row justify-content-center">
+        <div class="col-md-10">
+          <div class="header-box">
+            <h2 class="mb-0">💸 Gastos de Caja</h2>
+            <p class="mb-0">Registra salidas de dinero de la caja (compras urgentes, gastos varios, etc.)</p>
+          </div>
+
+          <% if (error) { %>
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+          <% } %>
+
+          <% if (success) { %>
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ¡Gasto registrado exitosamente!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+          <% } %>
+
+          <% if (caja) { %>
+          <!-- Formulario para registrar gasto -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title mb-3">Registrar Nuevo Gasto</h5>
+              <form id="formGasto">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="descripcion" class="form-label">Descripción del gasto</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="descripcion"
+                      name="descripcion"
+                      placeholder="Ej: Compra de gas, Artículos de limpieza..."
+                      required
+                    />
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="monto" class="form-label">Monto (₡)</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="monto"
+                      name="monto"
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0.01"
+                      required
+                    />
+                  </div>
+                  <div class="col-md-2 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                      Registrar
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Total de gastos -->
+          <div class="total-gastos mb-4">
+            Total en Gastos: ₡<span id="totalGastos"><%= caja.totalGastos ? caja.totalGastos.toLocaleString('es-CR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00' %></span>
+          </div>
+
+          <!-- Lista de gastos -->
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-3">Gastos del Día</h5>
+              <div id="listaGastos">
+                <% if (caja.gastos && caja.gastos.length > 0) { %>
+                  <% caja.gastos.forEach(function(gasto) { %>
+                  <div class="gasto-item" data-gasto-id="<%= gasto._id %>">
+                    <div>
+                      <strong><%= gasto.descripcion %></strong><br>
+                      <small class="text-muted">
+                        <%= new Date(gasto.fecha).toLocaleString('es-CR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit',
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        }) %> - por <%= gasto.usuario %>
+                      </small>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                      <span class="fs-5 fw-bold text-danger">-₡<%= gasto.monto.toLocaleString('es-CR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %></span>
+                      <button class="btn-delete btn-eliminar-gasto" data-gasto-id="<%= gasto._id %>">
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                  <% }); %>
+                <% } else { %>
+                  <p class="text-muted text-center py-4">No hay gastos registrados para hoy</p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón volver -->
+          <div class="mt-4 text-center">
+            <a href="/cash/cierre" class="btn btn-outline-secondary">Volver a Cierre de Caja</a>
+          </div>
+
+          <% } else { %>
+          <div class="alert alert-warning">
+            <p class="mb-0">No hay caja abierta. <a href="/cash/apertura">Abrir caja</a></p>
+          </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Registrar gasto
+      document.getElementById('formGasto').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const descripcion = document.getElementById('descripcion').value;
+        const monto = document.getElementById('monto').value;
+
+        try {
+          const response = await fetch('/cash/gastos', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ descripcion, monto }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            // Recargar página para mostrar el nuevo gasto
+            window.location.reload();
+          } else {
+            alert('Error: ' + data.error);
+          }
+        } catch (error) {
+          console.error('Error al registrar gasto:', error);
+          alert('Error al registrar el gasto');
+        }
+      });
+
+      // Eliminar gasto
+      document.querySelectorAll('.btn-eliminar-gasto').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          const gastoId = e.target.dataset.gastoId;
+
+          if (!confirm('¿Estás seguro de eliminar este gasto?')) {
+            return;
+          }
+
+          try {
+            const response = await fetch(`/cash/gastos/${gastoId}`, {
+              method: 'DELETE',
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+              // Recargar página
+              window.location.reload();
+            } else {
+              alert('Error: ' + data.error);
+            }
+          } catch (error) {
+            console.error('Error al eliminar gasto:', error);
+            alert('Error al eliminar el gasto');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

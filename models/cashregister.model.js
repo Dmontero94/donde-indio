@@ -53,6 +53,17 @@ const cashRegisterSchema = new mongoose.Schema({
     },
   ],
 
+  // GASTOS DEL DÍA
+  gastos: [
+    {
+      descripcion: { type: String, required: true },
+      monto: { type: Number, required: true },
+      fecha: { type: Date, default: () => DateTime.now().setZone(TIMEZONE_CR).toJSDate() },
+      usuario: { type: String, required: true },
+    },
+  ],
+  totalGastos: { type: Number, default: 0 },
+
   notas: String,
   creadoEn: { type: Date, default: Date.now },
 });

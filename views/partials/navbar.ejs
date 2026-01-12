@@ -74,13 +74,29 @@
           </a>
         </li>
 
-      </ul>
-            <ul class="navbar-nav mb-2 mb-lg-0 ms-auto">
-        <li class="nav-item">
-          <a class="nav-link btn btn-warning btn-sm" href="/cash/cierre" style="margin-right: 10px; color: white !important;">
-            🔒 Cerrar Caja
+        <!-- 📊 CAJA: Gestión de Caja -->
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="navbarDropdownCaja"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            💰 Caja
           </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdownCaja">
+            <li><a class="dropdown-item" href="/cash/apertura">🔓 Abrir Caja</a></li>
+            <li><a class="dropdown-item" href="/cash/cierre">🔒 Cerrar Caja</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="/cash/gastos">💸 Gastos del Día</a></li>
+            <li><a class="dropdown-item" href="/cash/historial">📊 Historial de Cierres</a></li>
+          </ul>
         </li>
+
+      </ul>
+      <ul class="navbar-nav mb-2 mb-lg-0 ms-auto">
         <% if (typeof currentUser !== 'undefined' && currentUser) { %>
           <li class="nav-item">
             <span class="navbar-text me-2">

@@ -152,6 +152,13 @@
                 >
               </div>
 
+              <div class="detail-row">
+                <span>💸 Total Gastos del Día:</span>
+                <strong class="text-danger"
+                  >-₡ <%= (caja.totalGastos || 0).toLocaleString('es-CR', { minimumFractionDigits: 2 }) %></strong
+                >
+              </div>
+
               <div class="detail-row grand-total">
                 <span>🔒 TOTAL EN CAJA:</span>
                 <strong
@@ -197,6 +204,44 @@
               <% } %>
             </div>
           </div>
+
+          <!-- Gastos del Día -->
+          <% if (caja.gastos && caja.gastos.length > 0) { %>
+          <div class="card">
+            <div class="card-body">
+              <h5 class="section-title">💸 Gastos del Día</h5>
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Descripción</th>
+                      <th>Usuario</th>
+                      <th class="text-end">Monto</th>
+                      <th>Hora</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% caja.gastos.forEach(function(gasto, idx) { %>
+                    <tr>
+                      <td><%= idx + 1 %></td>
+                      <td><%= gasto.descripcion %></td>
+                      <td><%= gasto.usuario %></td>
+                      <td class="text-end text-danger">-₡<%= gasto.monto.toLocaleString('es-CR', {minimumFractionDigits: 2}) %></td>
+                      <td><%= new Date(gasto.fecha).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' }) %></td>
+                    </tr>
+                    <% }); %>
+                    <tr class="table-secondary">
+                      <td colspan="3" class="text-end"><strong>Total Gastos:</strong></td>
+                      <td class="text-end text-danger"><strong>-₡<%= caja.totalGastos.toLocaleString('es-CR', {minimumFractionDigits: 2}) %></strong></td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <% } %>
         </div>
 
         <!-- Panel Lateral -->
@@ -211,6 +256,7 @@
                   <li>El monto inicial de apertura</li>
                   <li>Total de ingresos en efectivo</li>
                   <li>Total de ingresos en SINPE</li>
+                  <li>Gastos realizados durante el día</li>
                   <li>Monto total contabilizado</li>
                 </ul>
               </div>

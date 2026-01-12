@@ -295,7 +295,12 @@ router.post("/cierre", requireLogin, async (req, res) => {
     });
 
     const totalIngresos = totalEfectivo + totalSinpe;
-    const montoCierre = caja.montoApertura + totalIngresos;
+    
+    // Calcular total de gastos
+    const totalGastos = caja.gastos.reduce((sum, g) => sum + g.monto, 0);
+    caja.totalGastos = totalGastos;
+    
+    const montoCierre = caja.montoApertura + totalIngresos - totalGastos;
 
     // Registrar quién cierra (usuario de sesión)
     caja.usuarioCierre = username;
@@ -363,6 +368,206 @@ router.get("/reporte/:cajaId", requireLogin, async (req, res) => {
     res.status(500).render("caja.reporte.ejs", {
       error: "Error al cargar reporte",
       caja: null,
+    });
+  }
+});
+
+// ============================================
+// GASTOS DE CAJA
+// ============================================
+
+// GET: Ver gastos del día actual
+router.get("/gastos", requireLogin, async (req, res) => {
+  try {
+    const cajaId = req.session.cajaActiva;
+
+    if (!cajaId) {
+      return res.status(400).render("caja.gastos.ejs", {
+        error: "No hay caja abierta. Debes abrir caja primero.",
+        caja: null,
+        currentUser: req.session.user,
+      });
+    }
+
+    const caja = await CashRegister.findById(cajaId);
+
+    if (!caja || caja.estado === "cerrada") {
+      return res.status(400).render("caja.gastos.ejs", {
+        error: "La caja está cerrada o no existe.",
+        caja: null,
+        currentUser: req.session.user,
+      });
+    }
+
+    res.render("caja.gastos.ejs", {
+      error: null,
+      caja: caja,
+      currentUser: req.session.user,
+      success: req.query.success || null,
+    });
+  } catch (error) {
+    console.error("Error en GET /cash/gastos:", error);
+    res.status(500).render("caja.gastos.ejs", {
+      error: "Error al cargar gastos",
+      caja: null,
+      currentUser: req.session ? req.session.user : null,
+    });
+  }
+});
+
+// POST: Registrar un gasto
+router.post("/gastos", requireLogin, async (req, res) => {
+  try {
+    const { descripcion, monto } = req.body;
+    const username = req.session.user.username;
+    const cajaId = req.session.cajaActiva;
+
+    if (!cajaId) {
+      return res.status(400).json({
+        success: false,
+        error: "No hay caja abierta",
+      });
+    }
+
+    const caja = await CashRegister.findById(cajaId);
+
+    if (!caja || caja.estado === "cerrada") {
+      return res.status(400).json({
+        success: false,
+        error: "La caja está cerrada o no existe",
+      });
+    }
+
+    const montoNum = parseFloat(monto);
+    if (isNaN(montoNum) || montoNum <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: "El monto debe ser un número positivo",
+      });
+    }
+
+    if (!descripcion || descripcion.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "La descripción es obligatoria",
+      });
+    }
+
+    // Agregar gasto
+    caja.gastos.push({
+      descripcion: descripcion.trim(),
+      monto: montoNum,
+      fecha: DateTime.now().setZone(TIMEZONE_CR).toJSDate(),
+      usuario: username,
+    });
+
+    // Actualizar total de gastos
+    caja.totalGastos = caja.gastos.reduce((sum, g) => sum + g.monto, 0);
+
+    await caja.save();
+
+    res.json({
+      success: true,
+      mensaje: "Gasto registrado exitosamente",
+      gasto: caja.gastos[caja.gastos.length - 1],
+      totalGastos: caja.totalGastos,
+    });
+  } catch (error) {
+    console.error("Error en POST /cash/gastos:", error);
+    res.status(500).json({
+      success: false,
+      error: "Error al registrar gasto: " + error.message,
+    });
+  }
+});
+
+// DELETE: Eliminar un gasto
+router.delete("/gastos/:gastoId", requireLogin, async (req, res) => {
+  try {
+    const { gastoId } = req.params;
+    const cajaId = req.session.cajaActiva;
+
+    if (!cajaId) {
+      return res.status(400).json({
+        success: false,
+        error: "No hay caja abierta",
+      });
+    }
+
+    const caja = await CashRegister.findById(cajaId);
+
+    if (!caja || caja.estado === "cerrada") {
+      return res.status(400).json({
+        success: false,
+        error: "La caja está cerrada o no existe",
+      });
+    }
+
+    // Eliminar gasto
+    caja.gastos = caja.gastos.filter((g) => g._id.toString() !== gastoId);
+
+    // Recalcular total
+    caja.totalGastos = caja.gastos.reduce((sum, g) => sum + g.monto, 0);
+
+    await caja.save();
+
+    res.json({
+      success: true,
+      mensaje: "Gasto eliminado exitosamente",
+      totalGastos: caja.totalGastos,
+    });
+  } catch (error) {
+    console.error("Error en DELETE /cash/gastos:", error);
+    res.status(500).json({
+      success: false,
+      error: "Error al eliminar gasto: " + error.message,
+    });
+  }
+});
+
+// ============================================
+// HISTORIAL DE CIERRES
+// ============================================
+
+// GET: Ver historial de cierres con filtros
+router.get("/historial", requireLogin, async (req, res) => {
+  try {
+    const { fechaInicio, fechaFin, usuario } = req.query;
+
+    // Construir filtro
+    const filtro = { estado: "cerrada" };
+
+    if (fechaInicio || fechaFin) {
+      filtro.fecha = {};
+      if (fechaInicio) {
+        const inicio = DateTime.fromISO(fechaInicio).setZone(TIMEZONE_CR).startOf("day").toJSDate();
+        filtro.fecha.$gte = inicio;
+      }
+      if (fechaFin) {
+        const fin = DateTime.fromISO(fechaFin).setZone(TIMEZONE_CR).endOf("day").toJSDate();
+        filtro.fecha.$lte = fin;
+      }
+    }
+
+    if (usuario && usuario.trim().length > 0) {
+      filtro.usuario = usuario.trim();
+    }
+
+    const cajas = await CashRegister.find(filtro).sort({ fecha: -1 }).limit(100);
+
+    res.render("caja.historial.ejs", {
+      error: null,
+      cajas: cajas,
+      currentUser: req.session.user,
+      filtros: { fechaInicio, fechaFin, usuario },
+    });
+  } catch (error) {
+    console.error("Error en GET /cash/historial:", error);
+    res.status(500).render("caja.historial.ejs", {
+      error: "Error al cargar historial de cierres",
+      cajas: [],
+      currentUser: req.session ? req.session.user : null,
+      filtros: {},
     });
   }
 });

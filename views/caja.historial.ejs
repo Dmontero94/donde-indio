@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Historial de Cierres - Donde Indio</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #f5f5f5;
+      }
+      .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .header-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+      .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+        cursor: pointer;
+      }
+      .badge-success {
+        background-color: #28a745;
+      }
+      .badge-warning {
+        background-color: #ffc107;
+        color: #000;
+      }
+      .filter-box {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      .cierre-row {
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .cierre-row:hover {
+        background-color: #e9ecef !important;
+        transform: translateX(5px);
+      }
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+      }
+      .empty-state i {
+        font-size: 48px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container-fluid py-4">
+      <%- include('partials/navbar') %>
+
+      <div class="row">
+        <div class="col-12">
+          <div class="header-box">
+            <h2 class="mb-0">📊 Historial de Cierres de Caja</h2>
+            <p class="mb-0">Consulta todos los cierres de caja realizados con filtros por fecha y usuario</p>
+          </div>
+
+          <% if (error) { %>
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+          <% } %>
+
+          <!-- Filtros -->
+          <div class="filter-box">
+            <h5 class="mb-3">🔍 Filtros de Búsqueda</h5>
+            <form method="GET" action="/cash/historial">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="fechaInicio" class="form-label">Fecha Inicio</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="fechaInicio"
+                    name="fechaInicio"
+                    value="<%= filtros.fechaInicio || '' %>"
+                  />
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="fechaFin" class="form-label">Fecha Fin</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="fechaFin"
+                    name="fechaFin"
+                    value="<%= filtros.fechaFin || '' %>"
+                  />
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="usuario" class="form-label">Usuario</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="usuario"
+                    name="usuario"
+                    placeholder="Nombre de usuario..."
+                    value="<%= filtros.usuario || '' %>"
+                  />
+                </div>
+              </div>
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                  Aplicar Filtros
+                </button>
+                <a href="/cash/historial" class="btn btn-outline-secondary">
+                  Limpiar Filtros
+                </a>
+              </div>
+            </form>
+          </div>
+
+          <!-- Tabla de Cierres -->
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-3">Cierres de Caja</h5>
+
+              <% if (cajas && cajas.length > 0) { %>
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Usuario</th>
+                      <th>Hora Apertura</th>
+                      <th>Hora Cierre</th>
+                      <th>Apertura</th>
+                      <th>Ingresos</th>
+                      <th>Gastos</th>
+                      <th>Cierre</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% cajas.forEach(function(caja) { 
+                      const fechaCaja = new Date(caja.fecha);
+                      const horaApertura = new Date(caja.horaApertura);
+                      const horaCierre = caja.horaCierre ? new Date(caja.horaCierre) : null;
+                    %>
+                    <tr class="cierre-row" onclick="window.location.href='/cash/reporte/<%= caja._id %>'">
+                      <td>
+                        <strong><%= fechaCaja.toLocaleDateString('es-CR', { 
+                          day: '2-digit', 
+                          month: '2-digit', 
+                          year: 'numeric' 
+                        }) %></strong>
+                      </td>
+                      <td>
+                        <span class="badge bg-primary"><%= caja.usuario %></span>
+                        <% if (caja.usuarioCierre && caja.usuarioCierre !== caja.usuario) { %>
+                          <br><small class="text-muted">Cerrado por: <%= caja.usuarioCierre %></small>
+                        <% } %>
+                      </td>
+                      <td>
+                        <%= horaApertura.toLocaleTimeString('es-CR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        }) %>
+                      </td>
+                      <td>
+                        <% if (horaCierre) { %>
+                          <%= horaCierre.toLocaleTimeString('es-CR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          }) %>
+                        <% } else { %>
+                          <span class="text-muted">-</span>
+                        <% } %>
+                      </td>
+                      <td class="text-end">
+                        ₡<%= caja.montoApertura.toLocaleString('es-CR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %>
+                      </td>
+                      <td class="text-end text-success">
+                        <strong>+₡<%= caja.totalIngresos.toLocaleString('es-CR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %></strong>
+                        <br>
+                        <small class="text-muted">
+                          Efec: ₡<%= caja.totalEfectivo.toLocaleString('es-CR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %>
+                          | Sinpe: ₡<%= caja.totalSinpe.toLocaleString('es-CR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %>
+                        </small>
+                      </td>
+                      <td class="text-end text-danger">
+                        <% if (caja.totalGastos && caja.totalGastos > 0) { %>
+                          <strong>-₡<%= caja.totalGastos.toLocaleString('es-CR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %></strong>
+                          <br>
+                          <small class="text-muted"><%= caja.gastos ? caja.gastos.length : 0 %> gasto(s)</small>
+                        <% } else { %>
+                          <span class="text-muted">₡0.00</span>
+                        <% } %>
+                      </td>
+                      <td class="text-end">
+                        <strong class="fs-5">₡<%= caja.montoCierre.toLocaleString('es-CR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %></strong>
+                      </td>
+                      <td>
+                        <a href="/cash/reporte/<%= caja._id %>" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">
+                          Ver Detalle
+                        </a>
+                      </td>
+                    </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+
+              <% if (cajas.length === 100) { %>
+              <div class="alert alert-info mt-3">
+                Se están mostrando los primeros 100 resultados. Usa los filtros para refinar tu búsqueda.
+              </div>
+              <% } %>
+
+              <% } else { %>
+              <div class="empty-state">
+                <div>📭</div>
+                <h5>No se encontraron cierres de caja</h5>
+                <p class="text-muted">
+                  <% if (filtros.fechaInicio || filtros.fechaFin || filtros.usuario) { %>
+                    No hay cierres que coincidan con los filtros aplicados.
+                  <% } else { %>
+                    Aún no se han realizado cierres de caja.
+                  <% } %>
+                </p>
+              </div>
+              <% } %>
+            </div>
+          </div>
+
+          <!-- Resumen de estadísticas -->
+          <% if (cajas && cajas.length > 0) { %>
+          <div class="row mt-4">
+            <div class="col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h6 class="text-muted">Total de Cierres</h6>
+                  <h3><%= cajas.length %></h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h6 class="text-muted">Total Ingresos</h6>
+                  <h3 class="text-success">
+                    ₡<%= cajas.reduce((sum, c) => sum + c.totalIngresos, 0).toLocaleString('es-CR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %>
+                  </h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h6 class="text-muted">Total Gastos</h6>
+                  <h3 class="text-danger">
+                    ₡<%= cajas.reduce((sum, c) => sum + (c.totalGastos || 0), 0).toLocaleString('es-CR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %>
+                  </h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h6 class="text-muted">Total Cierres</h6>
+                  <h3>
+                    ₡<%= cajas.reduce((sum, c) => sum + c.montoCierre, 0).toLocaleString('es-CR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %>
+                  </h3>
+                </div>
+              </div>
+            </div>
+          </div>
+          <% } %>
+
+          <!-- Botón volver -->
+          <div class="mt-4 text-center">
+            <a href="/" class="btn btn-outline-secondary">Volver al Inicio</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
