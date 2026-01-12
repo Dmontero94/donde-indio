@@ -241,4 +241,173 @@ router.get("/", async (req, res) => {
   }
 });
 
+// ============================================
+// 🔐 ADMINISTRACIÓN DE PRODUCTOS (SOLO ADMIN)
+// ============================================
+
+// Vista de administración de productos
+router.get("/admin", async (req, res) => {
+  try {
+    const productos = await Product.find().sort({ categoria: 1, nombre: 1 });
+    
+    // Agrupar por categorías
+    const categorias = {};
+    productos.forEach(p => {
+      if (!categorias[p.categoria]) {
+        categorias[p.categoria] = [];
+      }
+      categorias[p.categoria].push(p);
+    });
+    
+    res.render("productos.admin.ejs", { 
+      activePage: "productos-admin",
+      productos,
+      categorias: Object.keys(categorias).sort(),
+      error: null,
+      success: null
+    });
+  } catch (err) {
+    console.error("Error cargando productos:", err);
+    res.status(500).send("Error cargando productos");
+  }
+});
+
+// Crear nuevo producto
+router.post("/admin/crear", async (req, res) => {
+  try {
+    const { nombre, categoria, precio } = req.body;
+    
+    if (!nombre || !categoria || !precio) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Todos los campos son requeridos" 
+      });
+    }
+    
+    const nuevoProducto = new Product({
+      nombre: nombre.trim(),
+      categoria: categoria.trim(),
+      precio: parseFloat(precio),
+      activo: true
+    });
+    
+    await nuevoProducto.save();
+    
+    res.json({ 
+      success: true, 
+      message: "Producto creado exitosamente",
+      producto: nuevoProducto
+    });
+  } catch (err) {
+    console.error("Error creando producto:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error creando producto: " + err.message 
+    });
+  }
+});
+
+// Actualizar producto existente
+router.put("/admin/editar/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, categoria, precio, activo } = req.body;
+    
+    if (!nombre || !categoria || !precio) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Todos los campos son requeridos" 
+      });
+    }
+    
+    const producto = await Product.findByIdAndUpdate(
+      id,
+      {
+        nombre: nombre.trim(),
+        categoria: categoria.trim(),
+        precio: parseFloat(precio),
+        activo: activo !== undefined ? activo : true
+      },
+      { new: true }
+    );
+    
+    if (!producto) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Producto no encontrado" 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: "Producto actualizado exitosamente",
+      producto
+    });
+  } catch (err) {
+    console.error("Error actualizando producto:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error actualizando producto: " + err.message 
+    });
+  }
+});
+
+// Eliminar producto (soft delete - marca como inactivo)
+router.delete("/admin/eliminar/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const producto = await Product.findByIdAndUpdate(
+      id,
+      { activo: false },
+      { new: true }
+    );
+    
+    if (!producto) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Producto no encontrado" 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: "Producto eliminado exitosamente" 
+    });
+  } catch (err) {
+    console.error("Error eliminando producto:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error eliminando producto: " + err.message 
+    });
+  }
+});
+
+// Eliminar producto permanentemente (opcional - usar con cuidado)
+router.delete("/admin/eliminar-permanente/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const producto = await Product.findByIdAndDelete(id);
+    
+    if (!producto) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Producto no encontrado" 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: "Producto eliminado permanentemente" 
+    });
+  } catch (err) {
+    console.error("Error eliminando producto:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error eliminando producto: " + err.message 
+    });
+  }
+});
+
 module.exports = router;
