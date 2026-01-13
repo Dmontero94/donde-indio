@@ -64,15 +64,17 @@
           </a>
         </li>
 
-        <!-- 🔐 ADMIN: Administración de Productos -->
-        <li class="nav-item">
-          <a
-            class="nav-link <%= (typeof activePage !== 'undefined' && activePage === 'productos-admin') ? 'active' : '' %>"
-            href="/productos/admin"
-          >
-            📋 Admin Menú
-          </a>
-        </li>
+        <!-- 🔐 ADMIN: Administración de Productos (Solo visible para el admin) -->
+        <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
+          <li class="nav-item">
+            <a
+              class="nav-link <%= (typeof activePage !== 'undefined' && activePage === 'productos-admin') ? 'active' : '' %>"
+              href="/productos/admin"
+            >
+              📋 Admin Menú
+            </a>
+          </li>
+        <% } %>
 
         <!-- 📊 CAJA: Gestión de Caja -->
         <li class="nav-item dropdown">

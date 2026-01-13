@@ -3,6 +3,29 @@ const express = require("express");
 const router = express.Router();
 const Product = require("../models/product.model");
 
+// 🔐 Middleware para verificar que el PIN de admin esté validado
+function requireAdminPIN(req, res, next) {
+  if (!req.session || !req.session.user) {
+    return res.redirect("/login");
+  }
+  
+  // Verificar si el PIN ya fue validado en esta sesión
+  if (req.session.adminPinValidated) {
+    return next();
+  }
+  
+  // Si no está validado, redirigir a la página de PIN
+  return res.redirect("/productos/admin/pin");
+}
+
+// Ruta para cerrar sesión del PIN (olvidar validación)
+router.get("/admin/logout-pin", (req, res) => {
+  if (req.session) {
+    req.session.adminPinValidated = false;
+  }
+  res.redirect("/");
+});
+
 // 🔹 Menú completo de Donde Indio (según las fotos)
 const menuSeed = [
   // === COMIDAS RÁPIDAS ===
@@ -245,8 +268,55 @@ router.get("/", async (req, res) => {
 // 🔐 ADMINISTRACIÓN DE PRODUCTOS (SOLO ADMIN)
 // ============================================
 
+// Página de ingreso de PIN
+router.get("/admin/pin", async (req, res) => {
+  // Si no está logueado, redirigir al login
+  if (!req.session || !req.session.user) {
+    return res.redirect("/login");
+  }
+  
+  // Si ya validó el PIN, redirigir directamente al admin
+  if (req.session.adminPinValidated) {
+    return res.redirect("/productos/admin");
+  }
+  
+  res.render("productos.admin.pin.ejs", {
+    activePage: "productos-admin",
+    error: null
+  });
+});
+
+// Validar PIN
+router.post("/admin/pin", async (req, res) => {
+  try {
+    const { pin } = req.body;
+    
+    if (!pin) {
+      return res.render("productos.admin.pin.ejs", {
+        activePage: "productos-admin",
+        error: "Por favor ingrese el PIN"
+      });
+    }
+    
+    // Verificar el PIN (con trim para eliminar espacios)
+    if (pin.trim() === process.env.ADMIN_PIN.trim()) {
+      // Marcar en sesión que el PIN fue validado
+      req.session.adminPinValidated = true;
+      return res.redirect("/productos/admin");
+    } else {
+      return res.render("productos.admin.pin.ejs", {
+        activePage: "productos-admin",
+        error: "PIN incorrecto. Intente nuevamente."
+      });
+    }
+  } catch (err) {
+    console.error("Error validando PIN:", err);
+    res.status(500).send("Error validando PIN");
+  }
+});
+
 // Vista de administración de productos
-router.get("/admin", async (req, res) => {
+router.get("/admin", requireAdminPIN, async (req, res) => {
   try {
     const productos = await Product.find().sort({ categoria: 1, nombre: 1 });
     
@@ -273,7 +343,7 @@ router.get("/admin", async (req, res) => {
 });
 
 // Crear nuevo producto
-router.post("/admin/crear", async (req, res) => {
+router.post("/admin/crear", requireAdminPIN, async (req, res) => {
   try {
     const { nombre, categoria, precio } = req.body;
     
@@ -308,7 +378,7 @@ router.post("/admin/crear", async (req, res) => {
 });
 
 // Actualizar producto existente
-router.put("/admin/editar/:id", async (req, res) => {
+router.put("/admin/editar/:id", requireAdminPIN, async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, categoria, precio, activo } = req.body;
@@ -353,7 +423,7 @@ router.put("/admin/editar/:id", async (req, res) => {
 });
 
 // Eliminar producto (soft delete - marca como inactivo)
-router.delete("/admin/eliminar/:id", async (req, res) => {
+router.delete("/admin/eliminar/:id", requireAdminPIN, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -384,7 +454,7 @@ router.delete("/admin/eliminar/:id", async (req, res) => {
 });
 
 // Eliminar producto permanentemente (opcional - usar con cuidado)
-router.delete("/admin/eliminar-permanente/:id", async (req, res) => {
+router.delete("/admin/eliminar-permanente/:id", requireAdminPIN, async (req, res) => {
   try {
     const { id } = req.params;
     

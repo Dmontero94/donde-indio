@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PIN de Administrador - Donde Indio</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    
+    .pin-container {
+      max-width: 450px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .pin-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 40px;
+      text-align: center;
+    }
+    
+    .pin-icon {
+      font-size: 4rem;
+      color: #667eea;
+      margin-bottom: 20px;
+    }
+    
+    .pin-input {
+      font-size: 2rem;
+      text-align: center;
+      letter-spacing: 15px;
+      font-weight: bold;
+      border: 3px solid #667eea;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 20px 0;
+      max-width: 300px;
+    }
+    
+    .pin-input:focus {
+      border-color: #764ba2;
+      box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .btn-pin {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.1rem;
+      border-radius: 10px;
+      font-weight: bold;
+      transition: transform 0.2s;
+    }
+    
+    .btn-pin:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      max-width: 300px;
+      margin: 20px auto;
+    }
+    
+    .keypad-btn {
+      font-size: 1.5rem;
+      padding: 20px;
+      border: 2px solid #667eea;
+      background: white;
+      border-radius: 10px;
+      font-weight: bold;
+      color: #667eea;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .keypad-btn:hover {
+      background: #667eea;
+      color: white;
+      transform: scale(1.05);
+    }
+    
+    .keypad-btn:active {
+      transform: scale(0.95);
+    }
+    
+    .keypad-btn.clear {
+      background: #dc3545;
+      color: white;
+      border-color: #dc3545;
+    }
+    
+    .keypad-btn.clear:hover {
+      background: #c82333;
+    }
+  </style>
+</head>
+
+<body class="d-flex align-items-center justify-content-center">
+  <div class="pin-container">
+    <div class="pin-card">
+      <i class="bi bi-shield-lock-fill pin-icon"></i>
+      <h2 class="mb-3">PIN de Administrador</h2>
+      <p class="text-muted mb-4">Ingrese el PIN para acceder a la administración del menú</p>
+      
+      <% if (error) { %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-triangle"></i> <%= error %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% } %>
+      
+      <form method="POST" action="/productos/admin/pin" id="pinForm">
+        <input 
+          type="password" 
+          class="form-control pin-input mx-auto" 
+          id="pinInput" 
+          name="pin" 
+          maxlength="6" 
+          placeholder="••••"
+          autocomplete="off"
+          readonly
+          required
+        />
+        
+        <div class="keypad">
+          <button type="button" class="keypad-btn" onclick="addDigit('1')">1</button>
+          <button type="button" class="keypad-btn" onclick="addDigit('2')">2</button>
+          <button type="button" class="keypad-btn" onclick="addDigit('3')">3</button>
+          <button type="button" class="keypad-btn" onclick="addDigit('4')">4</button>
+          <button type="button" class="keypad-btn" onclick="addDigit('5')">5</button>
+          <button type="button" class="keypad-btn" onclick="addDigit('6')">6</button>
+          <button type="button" class="keypad-btn" onclick="addDigit('7')">7</button>
+          <button type="button" class="keypad-btn" onclick="addDigit('8')">8</button>
+          <button type="button" class="keypad-btn" onclick="addDigit('9')">9</button>
+          <button type="button" class="keypad-btn clear" onclick="clearPin()">
+            <i class="bi bi-backspace"></i>
+          </button>
+          <button type="button" class="keypad-btn" onclick="addDigit('0')">0</button>
+          <button type="submit" class="keypad-btn" style="background: #28a745; color: white; border-color: #28a745;">
+            <i class="bi bi-check-lg"></i>
+          </button>
+        </div>
+      </form>
+      
+      <div class="mt-4">
+        <a href="/" class="text-muted">
+          <i class="bi bi-arrow-left"></i> Volver al inicio
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    const pinInput = document.getElementById('pinInput');
+    const pinForm = document.getElementById('pinForm');
+    
+    function addDigit(digit) {
+      if (pinInput.value.length < 6) {
+        pinInput.value += digit;
+        
+        // Auto-submit si alcanza 4 o 6 dígitos (configuración común de PINs)
+        if (pinInput.value.length === 4 || pinInput.value.length === 6) {
+          // Opcional: descomentar para auto-submit
+          // setTimeout(() => pinForm.submit(), 300);
+        }
+      }
+    }
+    
+    function clearPin() {
+      pinInput.value = pinInput.value.slice(0, -1);
+    }
+    
+    // Permitir teclado físico también
+    document.addEventListener('keydown', function(e) {
+      if (e.key >= '0' && e.key <= '9') {
+        addDigit(e.key);
+        e.preventDefault();
+      } else if (e.key === 'Backspace') {
+        clearPin();
+        e.preventDefault();
+      } else if (e.key === 'Enter') {
+        pinForm.submit();
+        e.preventDefault();
+      }
+    });
+    
+    // Auto-focus cuando carga la página
+    window.addEventListener('load', function() {
+      setTimeout(() => {
+        // Simular foco visual sin abrir teclado en móvil
+        pinInput.style.borderColor = '#764ba2';
+      }, 100);
+    });
+  </script>
+</body>
+</html>
